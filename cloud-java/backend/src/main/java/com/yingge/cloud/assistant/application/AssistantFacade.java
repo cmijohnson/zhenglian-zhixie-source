@@ -1,0 +1,199 @@
+package com.yingge.cloud.assistant.application;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yingge.cloud.assistant.api.AssistantDtos;
+import com.yingge.cloud.auth.application.CurrentActorProvider;
+import com.yingge.cloud.customer.application.CustomerService;
+import com.yingge.cloud.customer.infrastructure.CustomerEntity;
+import com.yingge.cloud.interaction.application.InteractionService;
+import com.yingge.cloud.permission.application.PermissionService;
+import com.yingge.cloud.shared.api.ApiException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+public class AssistantFacade {
+    private static final String PRIVACY_SYSTEM = """
+            你是英格营销团队的内部客户管理助手。只能根据提供的最小上下文回答；不得猜测未提供的个人信息，
+            不得要求访问其他客户或数据库，不得输出 SQL。输出必须是简体中文，涉及事实时区分已知与待确认。
+            """;
+
+    private final AiProvider provider;
+    private final ObjectMapper objectMapper;
+    private final CurrentActorProvider actors;
+    private final PermissionService permissions;
+    private final CustomerService customers;
+    private final InteractionService interactions;
+    private final JdbcTemplate jdbc;
+
+    public AssistantFacade(AiProvider provider, ObjectMapper objectMapper, CurrentActorProvider actors,
+                           PermissionService permissions, CustomerService customers,
+                           InteractionService interactions, JdbcTemplate jdbc) {
+        this.provider = provider;
+        this.objectMapper = objectMapper;
+        this.actors = actors;
+        this.permissions = permissions;
+        this.customers = customers;
+        this.interactions = interactions;
+        this.jdbc = jdbc;
+    }
+
+    public AssistantDtos.Availability availability() {
+        return new AssistantDtos.Availability(provider.available(), provider.providerId(), provider.model());
+    }
+
+    @Transactional(readOnly = true)
+    public void requireCustomerAccess(UUID customerId) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        customers.requireVisibleEntity(customerId, actor);
+    }
+
+    public AssistantDtos.CustomerDraft parseCustomerDraft(String text) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        String schema = """
+                把用户文本解析为 JSON 客户草稿。字段：fullName,nickname,phone,wechatId,qqId,school,major,grade,city,
+                identityType,focusDirections(数组),demandSummary,intentionLevel,urgencyLevel,verificationStatus,
+                sourceChannel,currentStatus,ownerNotes,nextFollowUpAt(ISO-8601或null),uncertainties(数组)。
+                不确定的字段必须为 null 并写入 uncertainties，不能编造。
+                """;
+        return structured("PARSE_CUSTOMER_DRAFT", null, PRIVACY_SYSTEM + schema, text, AssistantDtos.CustomerDraft.class);
+    }
+
+    public AssistantDtos.InteractionDraft parseInteractionDraft(String text) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        String schema = """
+                把用户文本解析为 JSON 沟通草稿。字段：contactedAt(ISO-8601或null),channel,summary,details,outcome,
+                verificationTodo,nextFollowUpAt(ISO-8601或null),currentStatus,intentionLevel,verificationStatus,
+                uncertainties(数组)。不确定字段必须为 null，不能编造。
+                """;
+        return structured("PARSE_INTERACTION_DRAFT", null, PRIVACY_SYSTEM + schema, text, AssistantDtos.InteractionDraft.class);
+    }
+
+    @Transactional
+    public String summarizeCustomerTimeline(UUID customerId) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        CustomerEntity customer = customers.requireVisibleEntity(customerId, actor);
+        var timeline = interactions.list(customerId).stream().limit(50).toList();
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("customer", Map.of(
+                "name", customer.getFullName(),
+                "status", customer.getCurrentStatus(),
+                "intention", customer.getIntentionLevel(),
+                "verification", customer.getVerificationStatus(),
+                "demand", nullSafe(customer.getDemandSummary()),
+                "nextFollowUpAt", customer.getNextFollowUpAt() == null ? "" : customer.getNextFollowUpAt().toString()
+        ));
+        context.put("recentInteractions", timeline);
+        return text("SUMMARIZE_TIMELINE", customerId, PRIVACY_SYSTEM,
+                "请基于以下单个客户上下文总结进展、未确认信息、风险和下一步。\n" + json(context));
+    }
+
+    @Transactional
+    public String recommendNextActions(UUID customerId) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        CustomerEntity customer = customers.requireVisibleEntity(customerId, actor);
+        var context = Map.of("status", customer.getCurrentStatus(), "intention", customer.getIntentionLevel(),
+                "verification", customer.getVerificationStatus(), "demand", nullSafe(customer.getDemandSummary()),
+                "lastContactAt", customer.getLastContactAt() == null ? "" : customer.getLastContactAt().toString());
+        return text("RECOMMEND_NEXT_ACTIONS", customerId, PRIVACY_SYSTEM,
+                "给出最多 5 条具体下一步建议，并说明依据。上下文：" + json(context));
+    }
+
+    @Transactional
+    public String generateDailyBriefing() {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        Instant now = Instant.now();
+        List<Map<String, Object>> candidates = customers.visibleEntities(actor, false).stream()
+                .filter(row -> (row.getNextFollowUpAt() != null && row.getNextFollowUpAt().isBefore(now.plus(Duration.ofDays(1))))
+                        || ("高".equals(row.getIntentionLevel()) && (row.getLastContactAt() == null
+                        || row.getLastContactAt().isBefore(now.minus(Duration.ofDays(3))))))
+                .limit(25)
+                .map(row -> Map.<String, Object>of(
+                        "customerId", row.getId().toString(), "name", row.getFullName(),
+                        "status", row.getCurrentStatus(), "intention", row.getIntentionLevel(),
+                        "nextFollowUpAt", row.getNextFollowUpAt() == null ? "" : row.getNextFollowUpAt().toString()
+                )).toList();
+        return text("DAILY_BRIEFING", null, PRIVACY_SYSTEM,
+                "基于以下已通过权限过滤的候选客户生成今日简报，按紧急性排序：" + json(candidates));
+    }
+
+    @Transactional
+    public String detectDataQualityIssues(UUID customerId) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        CustomerEntity customer = customers.requireVisibleEntity(customerId, actor);
+        var minimal = Map.of("name", customer.getFullName(), "school", nullSafe(customer.getSchool()),
+                "major", nullSafe(customer.getMajor()), "grade", nullSafe(customer.getGrade()),
+                "verification", customer.getVerificationStatus(), "demand", nullSafe(customer.getDemandSummary()));
+        return text("DATA_QUALITY", customerId, PRIVACY_SYSTEM,
+                "仅指出缺失、互相矛盾或需要人工核实的数据，不要补写信息：" + json(minimal));
+    }
+
+    private <T> T structured(String purpose, UUID customerId, String system, String prompt, Class<T> type) {
+        long started = System.nanoTime();
+        try {
+            AiProvider.AiResult result = provider.generate(system, prompt, true);
+            T parsed = objectMapper.readValue(stripFences(result.content()), type);
+            recordRun(purpose, customerId, "SUCCESS", result, elapsed(started), null);
+            return parsed;
+        } catch (ApiException exception) {
+            recordRun(purpose, customerId, "FAILED", null, elapsed(started), exception.code());
+            throw exception;
+        } catch (Exception exception) {
+            recordRun(purpose, customerId, "FAILED", null, elapsed(started), "AI_INVALID_JSON");
+            throw ApiException.unavailable("AI_INVALID_JSON", "模型返回的草稿格式无效，请重试");
+        }
+    }
+
+    private String text(String purpose, UUID customerId, String system, String prompt) {
+        long started = System.nanoTime();
+        try {
+            AiProvider.AiResult result = provider.generate(system, prompt, false);
+            recordRun(purpose, customerId, "SUCCESS", result, elapsed(started), null);
+            return result.content();
+        } catch (ApiException exception) {
+            recordRun(purpose, customerId, "FAILED", null, elapsed(started), exception.code());
+            throw exception;
+        }
+    }
+
+    private void recordRun(String purpose, UUID customerId, String status, AiProvider.AiResult result,
+                           long latency, String errorCode) {
+        var actor = actors.require();
+        jdbc.update("""
+                insert into assistant_runs (id, organization_id, actor_membership_id, customer_id, purpose,
+                    provider, model, status, input_tokens, output_tokens, latency_ms, error_code)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, UUID.randomUUID(), actor.organizationId(), actor.membershipId(), customerId, purpose,
+                provider.providerId(), provider.model(), status,
+                result == null ? null : result.inputTokens(), result == null ? null : result.outputTokens(), latency, errorCode);
+    }
+
+    private String json(Object value) {
+        try { return objectMapper.writeValueAsString(value); }
+        catch (Exception exception) { throw new IllegalStateException(exception); }
+    }
+    private String stripFences(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        if (trimmed.startsWith("```")) {
+            trimmed = trimmed.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
+        }
+        return trimmed;
+    }
+    private long elapsed(long started) { return Duration.ofNanos(System.nanoTime() - started).toMillis(); }
+    private String nullSafe(String value) { return value == null ? "" : value; }
+}

@@ -1,0 +1,61 @@
+# --- Logs ----------------------------------------------------------------
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Node / Vite --------------------------------------------------------
+node_modules
+dist
+dist-ssr
+*.local
+
+# --- Tauri / Rust -------------------------------------------------------
+# Frontend build output mounted by tauri.conf.json
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# --- Swift Package Manager (macOS native module) ------------------------
+native-mac/.build/
+native-mac/.swiftpm/
+native-mac/Package.resolved
+native-mac/dist/
+native-mac/.DS_Store
+
+# Backups exported through the app
+*.sqlite.bak
+*.db.bak
+*.db-shm
+*.db-wal
+
+# --- Editor / OS --------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- Env / local secrets ------------------------------------------------
+.env
+.env.local
+.env.*.local
+
+# --- Misc ---------------------------------------------------------------
+*.tsbuildinfo
+.cache/
+coverage/
+
+# --- Local work products / generated evidence ---------------------------
+/.tmp/
+/artifacts/
+/output/
+/outputs/
+/cloud-java/docs/test-results/
+/cloud-java/tests/uat/fixtures/oversized-26mb.csv
