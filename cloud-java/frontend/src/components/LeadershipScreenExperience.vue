@@ -42,10 +42,10 @@ const recentMax = computed(() => Math.max(1, ...recentDays.value.map((item) =>
   item.addedFriendCustomers + item.trustedFriendCustomers + item.qualifiedFriendCustomers)))
 const champions = computed(() => {
   const definitions = [
-    { key: 'total' as const, label: '客户榜' },
-    { key: 'added' as const, label: '添加榜' },
+    { key: 'total' as const, label: '总添加榜' },
+    { key: 'todayTotal' as const, label: '总添加日榜' },
     { key: 'trusted' as const, label: '信任榜' },
-    { key: 'qualified' as const, label: '筛选榜' },
+    { key: 'qualityA' as const, label: 'A类榜' },
     { key: 'task' as const, label: '任务榜' },
   ]
   return definitions.map((definition) => {

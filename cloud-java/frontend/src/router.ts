@@ -29,6 +29,8 @@ import AdminAgentsView from './views/AdminAgentsView.vue'
 import OAuthConsentView from './views/OAuthConsentView.vue'
 import AgentApprovalView from './views/AgentApprovalView.vue'
 import LeadershipDashboardView from './views/LeadershipDashboardView.vue'
+import PerformanceView from './views/PerformanceView.vue'
+import AdminPerformanceView from './views/AdminPerformanceView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -57,6 +59,7 @@ const router = createRouter({
         { path: 'team-data', component: TeamDataView, meta: { teamData: true } },
         { path: 'leadership-dashboard', component: LeadershipDashboardView, meta: { teamData: true } },
         { path: 'daily-report', component: DailyReportView },
+        { path: 'performance', component: PerformanceView },
         { path: 'imports', component: ImportsView, meta: { bulk: true } },
         { path: 'exports', component: ExportsView, meta: { bulk: true } },
         { path: 'assistant', component: AssistantView },
@@ -70,6 +73,7 @@ const router = createRouter({
         { path: 'admin/assistant', component: AdminAssistantSettingsView, meta: { admin: true } },
         { path: 'admin/leadership-screen', component: AdminLeadershipScreenSettingsView, meta: { admin: true } },
         { path: 'admin/agents', component: AdminAgentsView, meta: { admin: true } },
+        { path: 'admin/performance', component: AdminPerformanceView, meta: { admin: true } },
         { path: 'settings', component: SettingsView },
       ],
     },

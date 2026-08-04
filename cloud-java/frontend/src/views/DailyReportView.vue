@@ -11,6 +11,8 @@ interface Report {
   reportDate: string
   grade26NewValidLeads: number
   deepCommunicationCount: number
+  pendingDeepCommunicationCount?: number
+  performanceManaged?: boolean
   todayIssues: string
   tomorrowPlan: string
   submitted: boolean
@@ -46,7 +48,7 @@ const form = reactive({ deepCommunicationCount: 0, todayIssues: '', tomorrowPlan
 const weekdays = ['一', '二', '三', '四', '五', '六', '日']
 
 const monthTitle = computed(() => {
-  const [year, month] = calendarMonth.value.split('-')
+  const [year, month] = (calendar.value?.month ?? calendarMonth.value).split('-')
   return `${year} 年 ${Number(month)} 月`
 })
 const calendarCells = computed<CalendarCell[]>(() => {
@@ -89,19 +91,21 @@ async function loadCalendar() {
   }
 }
 async function load() {
-  const requests: Promise<unknown>[] = [
-    api<Report>('/api/v1/daily-reports/today').then((data) => {
-      today.value = data
-      Object.assign(form, {
-        deepCommunicationCount: data.deepCommunicationCount,
-        todayIssues: data.todayIssues,
-        tomorrowPlan: data.tomorrowPlan,
-      })
-    }),
-    api<Report[]>('/api/v1/daily-reports').then((data) => { history.value = data }),
-  ]
-  if (canManage.value) requests.push(loadCalendar())
-  await Promise.all(requests)
+  const [todayData, historyData] = await Promise.all([
+    api<Report>('/api/v1/daily-reports/today'),
+    api<Report[]>('/api/v1/daily-reports'),
+  ])
+  today.value = todayData
+  history.value = historyData
+  Object.assign(form, {
+    deepCommunicationCount: todayData.deepCommunicationCount,
+    todayIssues: todayData.todayIssues,
+    tomorrowPlan: todayData.tomorrowPlan,
+  })
+  if (canManage.value) {
+    calendarMonth.value = todayData.reportDate.slice(0, 7)
+    await loadCalendar()
+  }
 }
 async function submit() {
   if (!today.value) return
@@ -206,11 +210,15 @@ onMounted(() => load().catch(() => { error.value = '每日汇报暂时无法加�
     <form v-if="today" class="panel report-form" @submit.prevent="submit">
       <div class="panel-title"><div><p class="eyebrow">{{ today.reportDate }}</p><h2>{{ today.submitted ? '更新今日汇报' : '提交今日汇报' }}</h2></div><span class="badge">审核结果实时更新</span></div>
       <label>1. 26级新增有效线索（审核统计）<div class="auto-field"><strong>{{ today.grade26NewValidLeads }}</strong><span>人</span></div></label>
-      <label>2. 深度沟通人数<input v-model.number="form.deepCommunicationCount" type="number" min="0" required></label>
+      <label v-if="today.performanceManaged">2. 深度沟通人数（绩效审核统计）
+        <div class="auto-field"><strong>{{ today.deepCommunicationCount }}</strong><span>已通过 · {{ today.pendingDeepCommunicationCount ?? 0 }} 条待审核</span></div>
+        <small class="muted">绩效启用后由审核通过的深度交流自动生成，不再手工填写。</small>
+      </label>
+      <label v-else>2. 深度沟通人数<input v-model.number="form.deepCommunicationCount" type="number" min="0" required></label>
       <label>3. 今日问题<textarea v-model.trim="form.todayIssues" rows="5" maxlength="5000" required placeholder="记录今天遇到的问题、阻碍或需要协助的事项"></textarea></label>
       <label>4. 明日计划<textarea v-model.trim="form.tomorrowPlan" rows="5" maxlength="5000" required placeholder="写清明天最重要的行动"></textarea></label>
       <button class="primary-button">{{ today.submitted ? '保存更新' : '提交汇报' }}</button>
     </form>
-    <section class="panel report-history"><div class="panel-title"><div><p class="eyebrow">HISTORY</p><h2>汇报记录</h2></div><span class="muted">最近 100 条</span></div><article v-for="report in history" :key="report.id" class="report-row"><header><strong>{{ report.memberDisplayName }}</strong><time>{{ report.reportDate }}</time></header><div class="report-numbers"><span>审核有效线索 <b>{{ report.grade26NewValidLeads }}</b></span><span>深度沟通 <b>{{ report.deepCommunicationCount }}</b></span></div><p><strong>今日问题</strong>{{ report.todayIssues }}</p><p><strong>明日计划</strong>{{ report.tomorrowPlan }}</p></article><div v-if="!history.length" class="empty-state">还没有汇报记录。</div></section>
+    <section class="panel report-history"><div class="panel-title"><div><p class="eyebrow">HISTORY</p><h2>汇报记录</h2></div><span class="muted">最近 100 条</span></div><article v-for="report in history" :key="report.id" class="report-row"><header><strong>{{ report.memberDisplayName }}</strong><time>{{ report.reportDate }}</time></header><div class="report-numbers"><span>审核有效线索 <b>{{ report.grade26NewValidLeads }}</b></span><span>深度沟通 <b>{{ report.deepCommunicationCount }}</b><small v-if="report.performanceManaged"> 绩效审核口径</small></span></div><p><strong>今日问题</strong>{{ report.todayIssues }}</p><p><strong>明日计划</strong>{{ report.tomorrowPlan }}</p></article><div v-if="!history.length" class="empty-state">还没有汇报记录。</div></section>
   </div>
 </template>

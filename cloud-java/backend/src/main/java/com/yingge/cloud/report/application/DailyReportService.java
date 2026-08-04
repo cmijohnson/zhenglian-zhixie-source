@@ -5,6 +5,7 @@ import com.yingge.cloud.auth.application.CurrentActorProvider;
 import com.yingge.cloud.content.application.ContentCampaignProperties;
 import com.yingge.cloud.permission.domain.CurrentActor;
 import com.yingge.cloud.permission.domain.RoleCode;
+import com.yingge.cloud.performance.application.PerformanceService;
 import com.yingge.cloud.report.api.DailyReportDtos;
 import com.yingge.cloud.report.infrastructure.DailyReportEntity;
 import com.yingge.cloud.report.infrastructure.DailyReportRepository;
@@ -30,7 +31,30 @@ public class DailyReportService {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
     private static final String HISTORY_SELECT = """
             select dr.id, dr.membership_id, u.display_name, dr.report_date,
-                   dr.deep_communication_count, dr.today_issues, dr.tomorrow_plan,
+                   case when exists (
+                       select 1 from performance_rule_versions rule
+                       where rule.organization_id=dr.organization_id and rule.effective_from<=dr.report_date
+                         and exists (select 1 from performance_participants participant
+                                     where participant.organization_id=dr.organization_id
+                                       and participant.membership_id=dr.membership_id
+                                       and participant.starts_on<=dr.report_date
+                                       and (participant.ends_on is null or participant.ends_on>=dr.report_date))
+                   ) then (
+                       select count(*) from performance_interaction_claims claim
+                       where claim.organization_id=dr.organization_id and claim.membership_id=dr.membership_id
+                         and claim.performance_date=dr.report_date and claim.status='APPROVED' and claim.approved_type='DEEP'
+                   ) else dr.deep_communication_count end deep_communication_count,
+                   (select count(*) from performance_interaction_claims claim
+                    where claim.organization_id=dr.organization_id and claim.membership_id=dr.membership_id
+                      and claim.performance_date=dr.report_date and claim.status='PENDING' and claim.requested_type='DEEP') pending_deep_count,
+                   exists (select 1 from performance_rule_versions rule
+                           where rule.organization_id=dr.organization_id and rule.effective_from<=dr.report_date
+                             and exists (select 1 from performance_participants participant
+                                         where participant.organization_id=dr.organization_id
+                                           and participant.membership_id=dr.membership_id
+                                           and participant.starts_on<=dr.report_date
+                                           and (participant.ends_on is null or participant.ends_on>=dr.report_date))) performance_managed,
+                   dr.today_issues, dr.tomorrow_plan,
                    dr.submitted_at, dr.updated_at, dr.version,
                    (select count(*) from customers c
                     where c.organization_id=dr.organization_id
@@ -49,15 +73,17 @@ public class DailyReportService {
     private final ContentCampaignProperties campaign;
     private final NamedParameterJdbcTemplate jdbc;
     private final AuditService audit;
+    private final PerformanceService performance;
 
     public DailyReportService(DailyReportRepository reports, CurrentActorProvider actors,
                               ContentCampaignProperties campaign, NamedParameterJdbcTemplate jdbc,
-                              AuditService audit) {
+                              AuditService audit, PerformanceService performance) {
         this.reports = reports;
         this.actors = actors;
         this.campaign = campaign;
         this.jdbc = jdbc;
         this.audit = audit;
+        this.performance = performance;
     }
 
     @Transactional(readOnly = true)
@@ -66,10 +92,17 @@ public class DailyReportService {
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         return reports.findByOrganizationIdAndMembershipIdAndReportDate(
                         actor.organizationId(), actor.membershipId(), today)
-                .map(row -> response(row, actor.displayName(), autoLeadCount(actor.organizationId(), actor.membershipId(), today)))
+                .map(row -> response(row, actor.displayName(), autoLeadCount(actor.organizationId(), actor.membershipId(), today),
+                        performance.performanceManaged(actor.organizationId(), actor.membershipId(), today),
+                        performance.approvedDeepCount(actor.organizationId(), actor.membershipId(), today),
+                        performance.pendingDeepCount(actor.organizationId(), actor.membershipId(), today)))
                 .orElseGet(() -> new DailyReportDtos.Response(
                         null, actor.membershipId(), actor.displayName(), today,
-                        autoLeadCount(actor.organizationId(), actor.membershipId(), today), 0, "", "",
+                        autoLeadCount(actor.organizationId(), actor.membershipId(), today),
+                        performance.performanceManaged(actor.organizationId(), actor.membershipId(), today)
+                                ? performance.approvedDeepCount(actor.organizationId(), actor.membershipId(), today) : 0,
+                        performance.pendingDeepCount(actor.organizationId(), actor.membershipId(), today),
+                        performance.performanceManaged(actor.organizationId(), actor.membershipId(), today), "", "",
                         null, null, 0, false));
     }
 
@@ -80,18 +113,24 @@ public class DailyReportService {
         validateDate(date);
         String issues = required(body.todayIssues(), "REPORT_ISSUES_REQUIRED", "今日问题不能为空");
         String plan = required(body.tomorrowPlan(), "REPORT_PLAN_REQUIRED", "明日计划不能为空");
+        boolean performanceManaged = performance.performanceManaged(actor.organizationId(), actor.membershipId(), date);
+        int deepCount = performanceManaged
+                ? performance.approvedDeepCount(actor.organizationId(), actor.membershipId(), date)
+                : body.deepCommunicationCount();
         DailyReportEntity report = reports.findByOrganizationIdAndMembershipIdAndReportDate(
                         actor.organizationId(), actor.membershipId(), date)
                 .map(existing -> {
-                    existing.update(body.deepCommunicationCount(), issues, plan);
+                    existing.update(deepCount, issues, plan);
                     return existing;
                 })
                 .orElseGet(() -> new DailyReportEntity(actor.organizationId(), actor.membershipId(), date,
-                        body.deepCommunicationCount(), issues, plan));
+                        deepCount, issues, plan));
         DailyReportEntity saved = reports.save(report);
         audit.record(actor, "DAILY_REPORT_SUBMITTED", "DAILY_REPORT", saved.getId().toString(), "SUCCESS",
                 java.util.Map.of("reportDate", date.toString()));
-        return response(saved, actor.displayName(), autoLeadCount(actor.organizationId(), actor.membershipId(), date));
+        return response(saved, actor.displayName(), autoLeadCount(actor.organizationId(), actor.membershipId(), date),
+                performanceManaged, deepCount,
+                performance.pendingDeepCount(actor.organizationId(), actor.membershipId(), date));
     }
 
     @Transactional(readOnly = true)
@@ -120,6 +159,7 @@ public class DailyReportService {
                         row.getObject("id", UUID.class), row.getObject("membership_id", UUID.class),
                         row.getString("display_name"), row.getObject("report_date", LocalDate.class),
                         row.getLong("grade26_count"), row.getInt("deep_communication_count"),
+                        row.getInt("pending_deep_count"), row.getBoolean("performance_managed"),
                         row.getString("today_issues"), row.getString("tomorrow_plan"),
                         row.getTimestamp("submitted_at").toInstant(), row.getTimestamp("updated_at").toInstant(),
                         row.getLong("version"), true));
@@ -230,10 +270,12 @@ public class DailyReportService {
         return count == null ? 0 : count;
     }
 
-    private DailyReportDtos.Response response(DailyReportEntity row, String displayName, long leadCount) {
+    private DailyReportDtos.Response response(DailyReportEntity row, String displayName, long leadCount,
+                                               boolean performanceManaged, int deepCount, int pendingDeepCount) {
         return new DailyReportDtos.Response(
                 row.getId(), row.getMembershipId(), displayName, row.getReportDate(), leadCount,
-                row.getDeepCommunicationCount(), row.getTodayIssues(), row.getTomorrowPlan(),
+                performanceManaged ? deepCount : row.getDeepCommunicationCount(), pendingDeepCount,
+                performanceManaged, row.getTodayIssues(), row.getTomorrowPlan(),
                 row.getSubmittedAt(), row.getUpdatedAt(), row.getVersion(), true);
     }
 

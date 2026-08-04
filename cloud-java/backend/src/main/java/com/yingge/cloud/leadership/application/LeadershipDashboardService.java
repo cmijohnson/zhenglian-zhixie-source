@@ -254,7 +254,10 @@ public class LeadershipDashboardService {
 
     private List<LeadershipDashboardDtos.MemberRanking> rankings(Scope scope) {
         if (scope.memberIds().isEmpty()) return List.of();
-        MapSqlParameterSource params = baseParams(scope);
+        MapSqlParameterSource params = baseParams(scope)
+                .addValue("rankingDate", scope.endDate())
+                .addValue("qualityCategory", CustomerQuality.CATEGORY)
+                .addValue("qualityALabel", CustomerQuality.LEVELS.getFirst().label());
         return jdbc.query("""
                 select membership.id membership_id, account.display_name,
                        coalesce(string_agg(distinct team.name, ' / ' order by team.name), '') team_names,
@@ -262,6 +265,24 @@ public class LeadershipDashboardService {
                        count(distinct customer.id) filter (where customer.friend_added_at is not null) added_customers,
                        count(distinct customer.id) filter (where customer.friend_trusted_at is not null) trusted_customers,
                        count(distinct customer.id) filter (where customer.friend_qualified_at is not null) qualified_customers,
+                       count(distinct customer.id) filter (
+                         where exists (
+                           select 1
+                           from customer_tags quality_customer_tag
+                           join tags quality_tag on quality_tag.id=quality_customer_tag.tag_id
+                           where quality_customer_tag.customer_id=customer.id
+                             and quality_tag.organization_id=membership.organization_id
+                             and quality_tag.active=true
+                             and quality_tag.category=:qualityCategory
+                             and quality_tag.name=:qualityALabel
+                         )
+                       ) quality_a_customers,
+                       count(distinct customer.id) filter (
+                         where customer.created_at >=
+                                 (cast(:rankingDate as date)::timestamp at time zone 'Asia/Shanghai')
+                           and customer.created_at <
+                                 ((cast(:rankingDate as date) + 1)::timestamp at time zone 'Asia/Shanghai')
+                       ) today_customers,
                        count(distinct assignment.id) assigned_tasks,
                        count(distinct assignment.id) filter (where assignment.status='COMPLETED') completed_tasks
                 from memberships membership
@@ -287,7 +308,9 @@ public class LeadershipDashboardService {
                     row.getObject("membership_id", UUID.class), row.getString("display_name"),
                     row.getString("team_names"), row.getLong("total_customers"),
                     row.getLong("added_customers"), row.getLong("trusted_customers"),
-                    row.getLong("qualified_customers"), assigned, completed, rate(completed, assigned)
+                    row.getLong("qualified_customers"), row.getLong("quality_a_customers"),
+                    row.getLong("today_customers"),
+                    assigned, completed, rate(completed, assigned)
             );
         });
     }

@@ -21,6 +21,7 @@ import com.yingge.cloud.mcp.security.McpExecutionContext;
 import com.yingge.cloud.mcp.tool.McpToolRegistry;
 import com.yingge.cloud.mcp.tool.McpToolResults;
 import com.yingge.cloud.organization.application.OrganizationAdminService;
+import com.yingge.cloud.performance.application.PerformanceService;
 import com.yingge.cloud.permission.domain.RoleCode;
 import com.yingge.cloud.reminder.application.ReminderFacade;
 import com.yingge.cloud.report.application.DailyReportService;
@@ -81,12 +82,14 @@ class McpToolRegistryTest {
                 .noneMatch(name -> name.startsWith("yingge_admin_"))
                 .doesNotContain("yingge_task_matrix", "yingge_task_create");
         assertThat(member).extracting(spec -> spec.tool().name())
-                .contains("yingge_customer_search", "yingge_customer_create")
+                .contains("yingge_customer_search", "yingge_customer_create", "yingge_performance_today",
+                        "yingge_performance_claim_create")
                 .noneMatch(name -> name.startsWith("yingge_admin_"))
                 .doesNotContain("yingge_task_matrix", "yingge_customer_lead_review");
         assertThat(viewer).extracting(spec -> spec.tool().name())
-                .contains("yingge_customer_search", "yingge_dashboard_get")
-                .doesNotContain("yingge_customer_create", "yingge_ai_daily_briefing");
+                .contains("yingge_customer_search", "yingge_dashboard_get", "yingge_performance_today")
+                .doesNotContain("yingge_customer_create", "yingge_ai_daily_briefing",
+                        "yingge_performance_claim_create");
     }
 
     private McpTransportContext context(RoleCode role, Set<String> scopes) {
@@ -109,6 +112,7 @@ class McpToolRegistryTest {
                 mock(ReminderFacade.class), mock(TaskService.class), mock(ContentService.class),
                 mock(AnnouncementService.class), mock(DailyReportService.class), mock(TeamDataService.class),
                 mock(TagApplicationService.class), mock(AssistantFacade.class), mock(AiSettingsService.class),
-                mock(OrganizationAdminService.class), mock(RegistrationService.class), mock(AuditQueryService.class));
+                mock(OrganizationAdminService.class), mock(RegistrationService.class), mock(AuditQueryService.class),
+                mock(PerformanceService.class));
     }
 }

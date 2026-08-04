@@ -44,6 +44,8 @@ const dashboard = {
     addedFriendCustomers: 30,
     trustedFriendCustomers: 21,
     qualifiedFriendCustomers: 14,
+    qualityACustomers: 9,
+    todayCustomers: 2,
     assignedTasks: 10,
     completedTasks: 8,
     taskCompletionRate: 0.8,
@@ -149,6 +151,13 @@ describe('leadership dashboard', () => {
     expect(wrapper.text()).toContain('128')
     expect(wrapper.text()).toContain('成员甲')
     expect(wrapper.text()).toContain('个人业绩五维排行榜')
+    expect(wrapper.text()).toContain('总添加客户排行榜')
+    expect(wrapper.text()).toContain('总添加客户日排行榜')
+    expect(wrapper.text()).toContain('A类客户排行榜')
+    expect(wrapper.text()).not.toContain('总客户排行榜')
+    expect(wrapper.text()).not.toContain('A类客户日排行榜')
+    expect(wrapper.text()).not.toContain('添加好友排行榜')
+    expect(wrapper.text()).not.toContain('筛选好友排行榜')
     expect(wrapper.text()).toContain('仅统计 2026 / 26级')
     expect(wrapper.text()).toContain('统计当前全部任务')
     expect(wrapper.text()).toContain('每日好友转化 K 线')
@@ -156,10 +165,22 @@ describe('leadership dashboard', () => {
     expect(wrapper.text()).toContain('A类用户')
     expect(wrapper.text()).toContain('未评级 37')
     expect(wrapper.findAll('.quality-tier-grid article')).toHaveLength(4)
+    expect(wrapper.findAll('.leadership-kpis .kpi-card')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="leadership-friend-stage-totals"]').text()).toContain('添加好友客户96')
+    expect(wrapper.find('[data-testid="leadership-friend-stage-totals"]').text()).toContain('信任好友客户61')
+    expect(wrapper.find('[data-testid="leadership-friend-stage-totals"]').text()).toContain('筛选好友客户35')
     expect(wrapper.text()).toContain('本周客户复盘')
     expect(wrapper.text()).toContain('社群转介绍')
     expect(wrapper.text()).toContain('筛选 18 / 58.1%')
-    expect(wrapper.findAll('.rank-metric-card')).toHaveLength(5)
+    const rankCards = wrapper.findAll('.rank-metric-card')
+    expect(rankCards).toHaveLength(5)
+    expect(rankCards.map((card) => card.find('h3').text())).toEqual([
+      '总添加客户排行榜',
+      '总添加客户日排行榜',
+      '信任好友排行榜',
+      'A类客户排行榜',
+      '任务完成排行榜',
+    ])
     expect(wrapper.find('.rank-tabs').exists()).toBe(false)
     expect(wrapper.find('button.leadership-export').exists()).toBe(true)
     expect(wrapper.find('a.leadership-tv-link').attributes('href')).toBe('/leadership-screen')

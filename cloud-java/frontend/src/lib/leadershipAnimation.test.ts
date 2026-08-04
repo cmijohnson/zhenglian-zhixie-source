@@ -32,9 +32,9 @@ function dashboard(): LeadershipDashboardData {
       createdAt: '2026-07-25T01:00:00Z', updatedAt: '2026-07-25T01:30:00Z',
     }],
     rankings: [
-      { membershipId: 'a', displayName: '甲', teamNames: '一组', totalCustomers: 8, addedFriendCustomers: 5, trustedFriendCustomers: 3, qualifiedFriendCustomers: 2, assignedTasks: 4, completedTasks: 1, taskCompletionRate: .25 },
-      { membershipId: 'b', displayName: '乙', teamNames: '一组', totalCustomers: 7, addedFriendCustomers: 4, trustedFriendCustomers: 2, qualifiedFriendCustomers: 1, assignedTasks: 4, completedTasks: 1, taskCompletionRate: .25 },
-      { membershipId: 'c', displayName: '丙', teamNames: '二组', totalCustomers: 6, addedFriendCustomers: 3, trustedFriendCustomers: 1, qualifiedFriendCustomers: 0, assignedTasks: 4, completedTasks: 1, taskCompletionRate: .25 },
+      { membershipId: 'a', displayName: '甲', teamNames: '一组', totalCustomers: 8, addedFriendCustomers: 5, trustedFriendCustomers: 3, qualifiedFriendCustomers: 2, qualityACustomers: 2, todayCustomers: 1, assignedTasks: 4, completedTasks: 1, taskCompletionRate: .25 },
+      { membershipId: 'b', displayName: '乙', teamNames: '一组', totalCustomers: 7, addedFriendCustomers: 4, trustedFriendCustomers: 2, qualifiedFriendCustomers: 1, qualityACustomers: 1, todayCustomers: 0, assignedTasks: 4, completedTasks: 1, taskCompletionRate: .25 },
+      { membershipId: 'c', displayName: '丙', teamNames: '二组', totalCustomers: 6, addedFriendCustomers: 3, trustedFriendCustomers: 1, qualifiedFriendCustomers: 0, qualityACustomers: 0, todayCustomers: 0, assignedTasks: 4, completedTasks: 1, taskCompletionRate: .25 },
     ],
     dailyConversions: [
       { date: '2026-07-20', addedFriendCustomers: 2, trustedFriendCustomers: 1, qualifiedFriendCustomers: 1, cumulativeQualifiedCustomers: 1 },
@@ -99,7 +99,7 @@ describe('leadership animation event detection', () => {
 
     expect(events.filter((event) => event.type === 'conversionStage')).toHaveLength(3)
     expect(events).toContainEqual(expect.objectContaining({ type: 'taskMilestone', threshold: 1, taskTitle: '阶段冲刺' }))
-    expect(events).toContainEqual(expect.objectContaining({ type: 'rankingChange', metric: '总客户榜', currentLeader: '乙' }))
+    expect(events).toContainEqual(expect.objectContaining({ type: 'rankingChange', metric: '总添加客户榜', currentLeader: '乙' }))
     expect(events).toContainEqual(expect.objectContaining({ type: 'teamMomentum', memberCount: 3 }))
   })
 

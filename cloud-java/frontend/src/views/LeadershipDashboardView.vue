@@ -13,7 +13,7 @@ import {
   type MemberRanking,
 } from '../lib/leadershipAnimation'
 
-type RankMetric = 'total' | 'added' | 'trusted' | 'qualified' | 'task'
+type RankMetric = 'total' | 'qualityA' | 'trusted' | 'todayTotal' | 'task'
 type RankTone = 'cyan' | 'blue' | 'purple' | 'gold' | 'green'
 
 interface RankBoard {
@@ -55,17 +55,17 @@ let sceneTimer: number | undefined
 let eventTimer: number | undefined
 
 const rankDefinitions: Omit<RankBoard, 'rows' | 'total' | 'participants' | 'average'>[] = [
-  { key: 'total', label: '总客户排行榜', english: 'CUSTOMER OWNERSHIP', tone: 'cyan', scope: '仅统计 2026 / 26级', unit: '人' },
-  { key: 'added', label: '添加好友排行榜', english: 'FRIEND ADDED', tone: 'blue', scope: '仅统计 2026 / 26级', unit: '人' },
+  { key: 'total', label: '总添加客户排行榜', english: 'TOTAL CUSTOMERS ADDED', tone: 'cyan', scope: '仅统计 2026 / 26级', unit: '人' },
+  { key: 'todayTotal', label: '总添加客户日排行榜', english: 'DAILY CUSTOMERS ADDED', tone: 'gold', scope: '今日新增 · 2026 / 26级', unit: '人' },
   { key: 'trusted', label: '信任好友排行榜', english: 'TRUST ESTABLISHED', tone: 'purple', scope: '仅统计 2026 / 26级', unit: '人' },
-  { key: 'qualified', label: '筛选好友排行榜', english: 'LEAD QUALIFIED', tone: 'gold', scope: '仅统计 2026 / 26级', unit: '人' },
+  { key: 'qualityA', label: 'A类客户排行榜', english: 'QUALITY A CUSTOMERS', tone: 'blue', scope: '仅统计 2026 / 26级', unit: '人' },
   { key: 'task', label: '任务完成排行榜', english: 'TASK COMPLETION', tone: 'green', scope: '统计当前全部任务', unit: '项' },
 ]
 
 const rankValue = (row: MemberRanking, metric: RankMetric) => {
-  if (metric === 'added') return row.addedFriendCustomers
+  if (metric === 'qualityA') return row.qualityACustomers ?? 0
   if (metric === 'trusted') return row.trustedFriendCustomers
-  if (metric === 'qualified') return row.qualifiedFriendCustomers
+  if (metric === 'todayTotal') return row.todayCustomers ?? 0
   if (metric === 'task') return row.completedTasks
   return row.totalCustomers
 }
@@ -73,7 +73,7 @@ const rankValue = (row: MemberRanking, metric: RankMetric) => {
 const rankBoards = computed<RankBoard[]>(() => rankDefinitions.map((definition) => {
   const rows = [...(data.value?.rankings ?? [])].sort((left, right) =>
     rankValue(right, definition.key) - rankValue(left, definition.key)
-      || right.qualifiedFriendCustomers - left.qualifiedFriendCustomers
+      || (right.qualityACustomers ?? 0) - (left.qualityACustomers ?? 0)
       || left.displayName.localeCompare(right.displayName, 'zh-CN'))
   const total = rows.reduce((sum, row) => sum + rankValue(row, definition.key), 0)
   const participants = rows.filter((row) => rankValue(row, definition.key) > 0).length
@@ -150,9 +150,9 @@ function dueLabel(value: string) {
 function rankDetail(row: MemberRanking, metric: RankMetric) {
   if (metric === 'task') return `完成率 ${percent(row.taskCompletionRate)}`
   if (metric === 'total') return `筛选 ${row.qualifiedFriendCustomers} 人`
-  if (metric === 'added') return `客户添加率 ${percent(row.totalCustomers ? row.addedFriendCustomers / row.totalCustomers : 0)}`
+  if (metric === 'qualityA') return `占本人客户 ${percent(row.totalCustomers ? (row.qualityACustomers ?? 0) / row.totalCustomers : 0)}`
   if (metric === 'trusted') return `添加后信任率 ${percent(row.addedFriendCustomers ? row.trustedFriendCustomers / row.addedFriendCustomers : 0)}`
-  return `信任后筛选率 ${percent(row.trustedFriendCustomers ? row.qualifiedFriendCustomers / row.trustedFriendCustomers : 0)}`
+  return `累计总量 ${row.totalCustomers} 人`
 }
 
 function businessActivityTime(value: LeadershipDashboardData | undefined) {
@@ -341,22 +341,15 @@ onBeforeUnmount(() => {
 
     <p v-if="error" class="leadership-error">{{ error }}</p>
     <template v-if="data">
-      <section class="leadership-kpis">
-        <article class="tech-card kpi-card cyan">
-          <div class="kpi-icon">◉</div><span>总客户数</span><strong :key="`total-${data.generatedAt}`" class="metric-flip">{{ data.headline.totalCustomers.toLocaleString() }}</strong>
-          <small>今日新增 <b>+{{ data.headline.todayNewCustomers }}</b></small><em></em>
-        </article>
-        <article class="tech-card kpi-card blue">
-          <div class="kpi-icon">＋</div><span>添加好友客户数</span><strong :key="`added-${data.generatedAt}`" class="metric-flip">{{ data.headline.addedFriendCustomers.toLocaleString() }}</strong>
-          <small>总客户添加率 <b>{{ percent(data.headline.addedRate) }}</b></small><em></em>
-        </article>
-        <article class="tech-card kpi-card purple">
-          <div class="kpi-icon">◆</div><span>信任好友客户数</span><strong :key="`trusted-${data.generatedAt}`" class="metric-flip">{{ data.headline.trustedFriendCustomers.toLocaleString() }}</strong>
-          <small>添加后信任率 <b>{{ percent(data.headline.trustRate) }}</b></small><em></em>
-        </article>
-        <article class="tech-card kpi-card gold">
-          <div class="kpi-icon">✓</div><span>筛选好友客户数</span><strong :key="`qualified-${data.generatedAt}`" class="metric-flip">{{ data.headline.qualifiedFriendCustomers.toLocaleString() }}</strong>
-          <small>今日筛选 <b>+{{ data.headline.todayQualifiedCustomers }}</b> · 信任后 {{ percent(data.headline.qualifiedRate) }}</small><em></em>
+      <section class="leadership-kpis leadership-kpis-total">
+        <article class="tech-card kpi-card total-kpi-card cyan">
+          <div class="kpi-icon">◉</div>
+          <div class="total-kpi-copy">
+            <span>总客户数</span>
+            <strong :key="`total-${data.generatedAt}`" class="metric-flip">{{ data.headline.totalCustomers.toLocaleString() }}</strong>
+          </div>
+          <small>今日新增 <b>+{{ data.headline.todayNewCustomers }}</b></small>
+          <em></em>
         </article>
       </section>
 
@@ -375,6 +368,27 @@ onBeforeUnmount(() => {
             <b>—</b>
             <span><small>未评级</small><strong>{{ data.customerQuality.unclassifiedCustomers }}</strong><em>人 · {{ percent(data.customerQuality.unclassifiedCustomers / Math.max(1, data.headline.totalCustomers)) }}</em></span>
             <p>等待成员或团队长根据真实沟通情况完成分层</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="tech-card friend-stage-total-panel" data-testid="leadership-friend-stage-totals">
+        <header>
+          <div><small>FRIEND CONVERSION TOTALS</small><h2>好友经营三阶段总数</h2></div>
+          <p>仅展示当前累计人数</p>
+        </header>
+        <div class="friend-stage-total-grid">
+          <article class="stage-added">
+            <b>＋</b>
+            <span><small>添加好友客户</small><strong>{{ data.headline.addedFriendCustomers.toLocaleString() }}</strong><em>人</em></span>
+          </article>
+          <article class="stage-trusted">
+            <b>◆</b>
+            <span><small>信任好友客户</small><strong>{{ data.headline.trustedFriendCustomers.toLocaleString() }}</strong><em>人</em></span>
+          </article>
+          <article class="stage-qualified">
+            <b>✓</b>
+            <span><small>筛选好友客户</small><strong>{{ data.headline.qualifiedFriendCustomers.toLocaleString() }}</strong><em>人</em></span>
           </article>
         </div>
       </section>

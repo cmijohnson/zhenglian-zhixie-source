@@ -42,6 +42,8 @@ public final class LeadershipDashboardDtos {
             long addedFriendCustomers,
             long trustedFriendCustomers,
             long qualifiedFriendCustomers,
+            long qualityACustomers,
+            long todayCustomers,
             long assignedTasks,
             long completedTasks,
             double taskCompletionRate

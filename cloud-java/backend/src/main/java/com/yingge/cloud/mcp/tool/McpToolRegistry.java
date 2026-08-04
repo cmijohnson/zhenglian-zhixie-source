@@ -25,6 +25,8 @@ import com.yingge.cloud.mcp.application.McpIdempotencyService;
 import com.yingge.cloud.mcp.security.McpExecutionContext;
 import com.yingge.cloud.mcp.security.McpAuthenticationAttributes;
 import com.yingge.cloud.organization.application.OrganizationAdminService;
+import com.yingge.cloud.performance.api.PerformanceDtos;
+import com.yingge.cloud.performance.application.PerformanceService;
 import com.yingge.cloud.reminder.api.ReminderDtos;
 import com.yingge.cloud.reminder.application.ReminderFacade;
 import com.yingge.cloud.report.api.DailyReportDtos;
@@ -97,6 +99,7 @@ public class McpToolRegistry {
     private final OrganizationAdminService organization;
     private final RegistrationService registration;
     private final AuditQueryService auditQuery;
+    private final PerformanceService performance;
 
     public McpToolRegistry(ObjectMapper mapper, Validator validator, McpExecutionContext execution,
                            McpToolResults results, McpIdempotencyService idempotency,
@@ -107,7 +110,7 @@ public class McpToolRegistry {
                            DailyReportService reports, TeamDataService teamData, TagApplicationService tags,
                            AssistantFacade assistant, AiSettingsService aiSettings,
                            OrganizationAdminService organization, RegistrationService registration,
-                           AuditQueryService auditQuery) {
+                           AuditQueryService auditQuery, PerformanceService performance) {
         this.mapper = mapper;
         this.validator = validator;
         this.execution = execution;
@@ -131,6 +134,7 @@ public class McpToolRegistry {
         this.organization = organization;
         this.registration = registration;
         this.auditQuery = auditQuery;
+        this.performance = performance;
     }
 
     public List<McpServerFeatures.SyncToolSpecification> specifications() {
@@ -254,6 +258,42 @@ public class McpToolRegistry {
         tools.add(write("yingge_daily_report_submit", "提交日报", "提交指定日期日报。",
                 McpToolSchemas.forRecord(DailyReportInput.class, Map.of("idempotencyKey", idempotencyKey())), false,
                 call -> { DailyReportInput in = input(call, DailyReportInput.class); return reports.submit(in.date(), validated(in.request())); }));
+
+        tools.add(read("yingge_performance_today", "读取今日绩效", "读取本人今日得分、申报窗口、可申报沟通和积分明细。",
+                McpToolSchemas.empty(), call -> performance.today()));
+        tools.add(read("yingge_performance_leaderboard", "读取绩效排行", "读取权限范围内指定日期段的团队绩效排行。",
+                McpToolSchemas.forRecord(PerformanceRangeInput.class, Map.of()), call -> {
+                    PerformanceRangeInput in = input(call, PerformanceRangeInput.class);
+                    return performance.leaderboard(in.from(), in.to(), in.teamId());
+                }));
+        tools.add(read("yingge_performance_history", "读取个人绩效趋势", "读取本人指定日期段的得分趋势。",
+                McpToolSchemas.forRecord(PerformanceRangeInput.class, Map.of()), call -> {
+                    PerformanceRangeInput in = input(call, PerformanceRangeInput.class);
+                    return performance.history(in.from(), in.to());
+                }));
+        tools.add(read("yingge_performance_claims", "查询交流绩效申报", "查询本人或有权查看范围内的交流绩效申报。",
+                McpToolSchemas.forRecord(PerformanceListInput.class, Map.of()), call -> {
+                    PerformanceListInput in = input(call, PerformanceListInput.class);
+                    return performance.claims(in.status(), in.membershipId(), in.date());
+                }));
+        tools.add(write("yingge_performance_claim_create", "创建交流绩效申报", "关联本人已记录的客户沟通创建申报；证据图片仍需在网页上传。",
+                bodySchema(PerformanceDtos.CreateClaimRequest.class, false), false,
+                call -> performance.createClaim(body(call, PerformanceDtos.CreateClaimRequest.class))));
+        tools.add(write("yingge_performance_claim_submit", "提交交流绩效申报", "提交已经在网页上传证据的交流绩效草稿。",
+                idWriteSchema("claimId", false), false,
+                call -> performance.submitClaim(parseUuid(call.arguments(), "claimId"))));
+        tools.add(read("yingge_performance_activities", "查询绩效活动", "查询本人或有权查看范围内的活动提案及处理状态。",
+                McpToolSchemas.forRecord(PerformanceListInput.class, Map.of()), call -> {
+                    PerformanceListInput in = input(call, PerformanceListInput.class);
+                    return performance.activities(in.status(), in.membershipId(), in.date());
+                }));
+        tools.add(write("yingge_performance_activity_create", "创建绩效活动提案", "创建活动提案并等待管理员立项。",
+                bodySchema(PerformanceDtos.CreateActivityRequest.class, false), false,
+                call -> performance.createActivity(body(call, PerformanceDtos.CreateActivityRequest.class))));
+        tools.add(write("yingge_performance_activity_complete", "提交活动成果", "提交已经在网页上传证据的活动实际参与人数。",
+                idBodySchema("activityId", PerformanceDtos.CompleteActivityRequest.class, false), false,
+                call -> performance.completeActivity(parseUuid(call.arguments(), "activityId"),
+                        body(call, PerformanceDtos.CompleteActivityRequest.class))));
         tools.add(read("yingge_announcement_list", "查询公告", "查询公告，可选择包含归档。",
                 McpToolSchemas.fields(Map.of("includeArchived", bool())),
                 call -> announcements.list(booleanValue(call.arguments().get("includeArchived")))));
@@ -366,6 +406,47 @@ public class McpToolRegistry {
                     return aiSettings.update(new AssistantAdminDtos.UpdateRequest(
                             in.enabled(), in.baseUrl(), in.model(), null, false, in.expectedVersion()));
                 }));
+        tools.add(adminRead("yingge_admin_performance_rules", "读取绩效规则版本", "管理员读取全部绩效规则版本。",
+                McpToolSchemas.empty(), call -> performance.rules()));
+        tools.add(adminWrite("yingge_admin_performance_rule_create", "创建绩效规则版本", "管理员创建未来生效的绩效规则版本。",
+                bodySchema(PerformanceDtos.CreateRuleRequest.class, false), false,
+                call -> performance.createRule(body(call, PerformanceDtos.CreateRuleRequest.class))));
+        tools.add(adminRead("yingge_admin_performance_participants", "读取绩效参与人员", "管理员读取带生效周期的参与人员。",
+                McpToolSchemas.empty(), call -> performance.participants()));
+        tools.add(adminWrite("yingge_admin_performance_participant_add", "添加绩效参与人员", "管理员添加成员的绩效参与周期。",
+                bodySchema(PerformanceDtos.ParticipantRequest.class, false), false,
+                call -> performance.addParticipant(body(call, PerformanceDtos.ParticipantRequest.class))));
+        tools.add(adminWrite("yingge_admin_performance_participant_update", "更新绩效参与周期", "管理员结束或调整参与周期。",
+                idBodySchema("participantId", PerformanceDtos.ParticipantUpdateRequest.class, false), false,
+                call -> performance.updateParticipant(parseUuid(call.arguments(), "participantId"),
+                        body(call, PerformanceDtos.ParticipantUpdateRequest.class))));
+        tools.add(adminWrite("yingge_admin_performance_claim_review", "审核交流绩效", "管理员批准、驳回或重新认定交流类型。",
+                idBodySchema("claimId", PerformanceDtos.ReviewClaimRequest.class, false), false,
+                call -> performance.reviewClaim(parseUuid(call.arguments(), "claimId"),
+                        body(call, PerformanceDtos.ReviewClaimRequest.class))));
+        tools.add(adminWrite("yingge_admin_performance_activity_review", "审核活动立项", "管理员批准或驳回活动提案。",
+                idBodySchema("activityId", PerformanceDtos.ReviewActivityRequest.class, false), false,
+                call -> performance.reviewActivity(parseUuid(call.arguments(), "activityId"),
+                        body(call, PerformanceDtos.ReviewActivityRequest.class))));
+        tools.add(adminWrite("yingge_admin_performance_activity_allocate", "核定并分配活动分", "管理员核定活动人数档次并按 0.5 分单位完成分配。",
+                idBodySchema("activityId", PerformanceDtos.AllocateActivityRequest.class, false), false,
+                call -> performance.allocateActivity(parseUuid(call.arguments(), "activityId"),
+                        body(call, PerformanceDtos.AllocateActivityRequest.class))));
+        tools.add(adminWrite("yingge_admin_performance_manual_entry", "录入绩效人工分", "管理员追加基础后勤分或关联原流水的纠错分。",
+                bodySchema(PerformanceDtos.ManualEntryRequest.class, false), false,
+                call -> performance.createManualEntry(body(call, PerformanceDtos.ManualEntryRequest.class))));
+        tools.add(adminRead("yingge_admin_performance_day", "读取绩效结算日", "管理员读取指定日期状态、待审数量和成员分数。",
+                McpToolSchemas.fields(Map.of("date", string()), "date"),
+                call -> performance.day(LocalDate.parse(text(call.arguments(), "date")))));
+        tools.add(adminWrite("yingge_admin_performance_settle", "结算每日绩效", "管理员在待审核项目全部处理后锁定指定日期。",
+                McpToolSchemas.forRecord(PerformanceSettleInput.class, Map.of("idempotencyKey", idempotencyKey())), false,
+                call -> { PerformanceSettleInput in = input(call, PerformanceSettleInput.class);
+                    return performance.settle(in.date(), in.expectedVersion()); }));
+        tools.add(adminWrite("yingge_admin_performance_reopen", "重开已结算绩效日", "保留旧结算修订并重开日期，需要人工确认且必须填写原因。",
+                McpToolSchemas.forRecord(PerformanceReopenInput.class,
+                        Map.of("idempotencyKey", idempotencyKey(), "approvalId", approvalId())), true,
+                call -> { PerformanceReopenInput in = input(call, PerformanceReopenInput.class);
+                    return performance.reopen(in.date(), validated(in.request())); }));
         return List.copyOf(tools);
     }
 
@@ -392,6 +473,9 @@ public class McpToolRegistry {
                 "yingge_content_review");
         Set<String> publisherOnly = Set.of(
                 "yingge_announcement_create", "yingge_announcement_update", "yingge_announcement_archive");
+        Set<String> contributorOnly = Set.of(
+                "yingge_performance_claim_create", "yingge_performance_claim_submit",
+                "yingge_performance_activity_create", "yingge_performance_activity_complete");
         return specifications().stream().filter(spec -> {
             String name = spec.tool().name();
             String scope = String.valueOf(spec.tool().meta().get("requiredScope"));
@@ -399,6 +483,10 @@ public class McpToolRegistry {
             if (name.startsWith("yingge_admin_") || adminOnly.contains(name)) return actor.isAdmin();
             if (reviewerOnly.contains(name)) return actor.canReviewTeamOperations();
             if (publisherOnly.contains(name)) return actor.canPublishAnnouncements();
+            if (contributorOnly.contains(name)) return actor.roles().stream().anyMatch(role ->
+                    role == com.yingge.cloud.permission.domain.RoleCode.ORG_ADMIN
+                            || role == com.yingge.cloud.permission.domain.RoleCode.TEAM_MANAGER
+                            || role == com.yingge.cloud.permission.domain.RoleCode.MEMBER);
             return true;
         }).toList();
     }
@@ -583,6 +671,7 @@ public class McpToolRegistry {
             case "yingge_admin_team_delete" -> "删除团队 " + arguments.get("teamId") + "，保留成员、客户和历史";
             case "yingge_admin_registration_code_disable" -> "停用注册码 " + arguments.get("registrationCodeId");
             case "yingge_admin_ai_settings_update" -> "更新组织 AI 服务开关、Provider 地址和模型（不涉及 API 密钥）";
+            case "yingge_admin_performance_reopen" -> "重开绩效结算日 " + arguments.get("date") + "，重新处理后需要再次结算";
             default -> "确认执行 " + tool;
         };
     }
@@ -605,6 +694,12 @@ public class McpToolRegistry {
     public record DailyReportInput(@NotNull LocalDate date, @NotNull @Valid DailyReportDtos.UpsertRequest request,
                                    String idempotencyKey) {}
     public record TeamDataInput(UUID teamId, UUID membershipId, String search, String grade) {}
+    public record PerformanceRangeInput(@NotNull LocalDate from, @NotNull LocalDate to, UUID teamId) {}
+    public record PerformanceListInput(String status, UUID membershipId, LocalDate date) {}
+    public record PerformanceSettleInput(@NotNull LocalDate date, long expectedVersion, String idempotencyKey) {}
+    public record PerformanceReopenInput(@NotNull LocalDate date,
+                                         @NotNull @Valid PerformanceDtos.ReopenDayRequest request,
+                                         String idempotencyKey, UUID approvalId) {}
     public record DeleteMemberInput(@NotNull UUID membershipId, @NotNull UUID transferCustomerToMembershipId,
                                     String idempotencyKey, UUID approvalId) {}
     public record TeamAssignInput(@NotNull UUID teamId, @NotNull UUID membershipId, boolean manager,

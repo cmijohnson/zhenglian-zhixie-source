@@ -101,6 +101,32 @@ operations:
   - { operation: OrganizationAdminController#assign, classification: TOOL, capability: yingge_admin_team_assign }
   - { operation: OrganizationAdminController#assignLeader, classification: TOOL, capability: yingge_admin_team_leader }
   - { operation: OrganizationAdminController#deleteTeam, classification: TOOL, capability: yingge_admin_team_delete }
+  - { operation: PerformanceController#today, classification: TOOL, capability: yingge_performance_today }
+  - { operation: PerformanceController#leaderboard, classification: TOOL, capability: yingge_performance_leaderboard }
+  - { operation: PerformanceController#history, classification: TOOL, capability: yingge_performance_history }
+  - { operation: PerformanceController#claims, classification: TOOL, capability: yingge_performance_claims }
+  - { operation: PerformanceController#createClaim, classification: TOOL, capability: yingge_performance_claim_create }
+  - { operation: PerformanceController#uploadClaimEvidence, classification: DEFERRED_FILES, capability: performance-claim-evidence-upload }
+  - { operation: PerformanceController#submitClaim, classification: TOOL, capability: yingge_performance_claim_submit }
+  - { operation: PerformanceController#reviewClaim, classification: TOOL, capability: yingge_admin_performance_claim_review }
+  - { operation: PerformanceController#activities, classification: TOOL, capability: yingge_performance_activities }
+  - { operation: PerformanceController#createActivity, classification: TOOL, capability: yingge_performance_activity_create }
+  - { operation: PerformanceController#reviewActivity, classification: TOOL, capability: yingge_admin_performance_activity_review }
+  - { operation: PerformanceController#uploadActivityEvidence, classification: DEFERRED_FILES, capability: performance-activity-evidence-upload }
+  - { operation: PerformanceController#completeActivity, classification: TOOL, capability: yingge_performance_activity_complete }
+  - { operation: PerformanceController#allocateActivity, classification: TOOL, capability: yingge_admin_performance_activity_allocate }
+  - { operation: PerformanceController#evidence, classification: DEFERRED_FILES, capability: performance-private-evidence }
+  - { operation: PerformanceController#rules, classification: TOOL, capability: yingge_admin_performance_rules }
+  - { operation: PerformanceController#createRule, classification: TOOL, capability: yingge_admin_performance_rule_create }
+  - { operation: PerformanceController#participants, classification: TOOL, capability: yingge_admin_performance_participants }
+  - { operation: PerformanceController#addParticipant, classification: TOOL, capability: yingge_admin_performance_participant_add }
+  - { operation: PerformanceController#updateParticipant, classification: TOOL, capability: yingge_admin_performance_participant_update }
+  - { operation: PerformanceController#createManualEntry, classification: TOOL, capability: yingge_admin_performance_manual_entry }
+  - { operation: PerformanceController#uploadManualEvidence, classification: DEFERRED_FILES, capability: performance-manual-evidence-upload }
+  - { operation: PerformanceController#day, classification: TOOL, capability: yingge_admin_performance_day }
+  - { operation: PerformanceController#settle, classification: TOOL, capability: yingge_admin_performance_settle }
+  - { operation: PerformanceController#reopen, classification: TOOL, capability: yingge_admin_performance_reopen }
+  - { operation: PerformanceController#export, classification: DEFERRED_FILES, capability: performance-xlsx-export }
   - { operation: ReminderController#list, classification: TOOL, capability: yingge_reminder_list }
   - { operation: ReminderController#create, classification: TOOL, capability: yingge_reminder_create }
   - { operation: ReminderController#update, classification: TOOL, capability: yingge_reminder_update }

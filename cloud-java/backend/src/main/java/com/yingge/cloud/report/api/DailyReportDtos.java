@@ -25,6 +25,8 @@ public final class DailyReportDtos {
             LocalDate reportDate,
             long grade26NewValidLeads,
             int deepCommunicationCount,
+            int pendingDeepCommunicationCount,
+            boolean performanceManaged,
             String todayIssues,
             String tomorrowPlan,
             Instant submittedAt,

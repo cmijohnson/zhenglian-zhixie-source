@@ -25,7 +25,7 @@ class FlywayPostgresIntegrationTest {
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
-        assertThat(result.migrationsExecuted).isEqualTo(21);
+        assertThat(result.migrationsExecuted).isEqualTo(22);
 
         try (var connection = DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
              var statement = connection.createStatement()) {
@@ -140,6 +140,17 @@ class FlywayPostgresIntegrationTest {
                     """)) {
                 assertThat(friendFunnelColumns.next()).isTrue();
                 assertThat(friendFunnelColumns.getInt(1)).isEqualTo(3);
+            }
+            try (var performanceTables = statement.executeQuery("""
+                    select count(*) from information_schema.tables where table_schema='public'
+                    and table_name in ('performance_rule_versions','performance_participants',
+                      'performance_interaction_claims','performance_activities',
+                      'performance_activity_allocations','performance_manual_entries',
+                      'performance_evidence','performance_score_ledger','performance_days',
+                      'performance_daily_settlements')
+                    """)) {
+                assertThat(performanceTables.next()).isTrue();
+                assertThat(performanceTables.getInt(1)).isEqualTo(10);
             }
             String organizationId = java.util.UUID.randomUUID().toString();
             statement.executeUpdate("""

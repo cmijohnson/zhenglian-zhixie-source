@@ -64,6 +64,12 @@ public class BootstrapInitializer implements ApplicationRunner {
         memberships.saveAndFlush(new MembershipEntity(membershipId, organizationId, userId, now));
         jdbc.update("insert into membership_roles (membership_id, role_id) values (?, ?)",
                 membershipId, UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        jdbc.update("""
+                insert into performance_rule_versions (
+                    id, organization_id, version_no, effective_from, created_by_membership_id
+                ) values (?, ?, 1, current_date, ?)
+                on conflict (organization_id, effective_from) do nothing
+                """, UUID.randomUUID(), organizationId, membershipId);
         seedDictionaries(organizationId);
         seedTags(organizationId, membershipId);
         log.info("Bootstrapped organizationId={} membershipId={} username={}",

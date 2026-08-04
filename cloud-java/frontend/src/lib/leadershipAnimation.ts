@@ -29,6 +29,8 @@ export interface MemberRanking {
   addedFriendCustomers: number
   trustedFriendCustomers: number
   qualifiedFriendCustomers: number
+  qualityACustomers: number
+  todayCustomers: number
   assignedTasks: number
   completedTasks: number
   taskCompletionRate: number
@@ -199,7 +201,7 @@ export type LeadershipAnimationEvent =
   | (EventBase & { type: 'rankingChange'; metric: string; previousLeader?: string; currentLeader: string })
   | (EventBase & { type: 'teamMomentum'; memberCount: number })
 
-type RankMetric = 'total' | 'added' | 'trusted' | 'qualified' | 'task'
+type RankMetric = 'total' | 'qualityA' | 'trusted' | 'todayTotal' | 'task'
 type NumberMetric = keyof Pick<Headline,
   'totalCustomers' | 'addedFriendCustomers' | 'trustedFriendCustomers' | 'qualifiedFriendCustomers'>
 type RateMetric = keyof Pick<Headline, 'addedRate' | 'trustRate' | 'qualifiedRate'>
@@ -227,17 +229,17 @@ const rateMetrics: Array<{
 ]
 
 const rankMetrics: Array<{ key: RankMetric; label: string; accent: EventBase['accent'] }> = [
-  { key: 'total', label: '总客户榜', accent: 'cyan' },
-  { key: 'added', label: '添加好友榜', accent: 'blue' },
+  { key: 'total', label: '总添加客户榜', accent: 'cyan' },
+  { key: 'todayTotal', label: '总添加客户日榜', accent: 'gold' },
   { key: 'trusted', label: '信任好友榜', accent: 'purple' },
-  { key: 'qualified', label: '筛选好友榜', accent: 'gold' },
+  { key: 'qualityA', label: 'A类客户榜', accent: 'blue' },
   { key: 'task', label: '任务完成榜', accent: 'green' },
 ]
 
 export function rankingValue(row: MemberRanking, metric: RankMetric) {
-  if (metric === 'added') return row.addedFriendCustomers
+  if (metric === 'qualityA') return row.qualityACustomers ?? 0
   if (metric === 'trusted') return row.trustedFriendCustomers
-  if (metric === 'qualified') return row.qualifiedFriendCustomers
+  if (metric === 'todayTotal') return row.todayCustomers ?? 0
   if (metric === 'task') return row.completedTasks
   return row.totalCustomers
 }
@@ -245,7 +247,7 @@ export function rankingValue(row: MemberRanking, metric: RankMetric) {
 function sortedRanking(data: LeadershipDashboardData, metric: RankMetric) {
   return [...data.rankings].sort((left, right) =>
     rankingValue(right, metric) - rankingValue(left, metric)
-      || right.qualifiedFriendCustomers - left.qualifiedFriendCustomers
+      || (right.qualityACustomers ?? 0) - (left.qualityACustomers ?? 0)
       || left.displayName.localeCompare(right.displayName, 'zh-CN'))
 }
 
@@ -594,8 +596,8 @@ export function previewLeadershipEvent(type: LeadershipEventType): LeadershipAni
     },
     rankingChange: {
       id: `preview:${type}:${Date.now()}`, type: 'rankingChange', priority: 80, title: '榜首易主',
-      eyebrow: 'RANKING OVERTAKE', value: '英格之星', subtitle: '总客户榜发生关键换位',
-      accent: 'cyan', metric: '总客户榜', previousLeader: '昨日冠军', currentLeader: '英格之星',
+      eyebrow: 'RANKING OVERTAKE', value: '英格之星', subtitle: '总添加客户榜发生关键换位',
+      accent: 'cyan', metric: '总添加客户榜', previousLeader: '昨日冠军', currentLeader: '英格之星',
       names: ['英格之星', '增长先锋', '客户专家'],
     },
     teamMomentum: {

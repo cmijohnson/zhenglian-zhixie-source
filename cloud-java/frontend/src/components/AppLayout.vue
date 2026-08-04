@@ -16,6 +16,7 @@ const primaryLinks = computed(() => [
   { to: '/team-data', label: '团队数据', icon: '◩', show: auth.canViewTeamData },
 ])
 const dailyExecutionLinks = [
+  { to: '/performance', label: '绩效中心', icon: '◆', show: true },
   { to: '/daily-report', label: '每日汇报', icon: '≡', show: true },
   { to: '/content-tasks', label: '内容任务', icon: '◈', show: true },
 ]
@@ -59,6 +60,7 @@ async function logout() {
         <RouterLink v-if="auth.isAdmin" to="/admin/assistant"><span>✦</span>智能助手配置</RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/admin/leadership-screen"><span>◈</span>大屏设置</RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/admin/agents"><span>⌘</span>Agent 管理</RouterLink>
+        <RouterLink v-if="auth.isAdmin" to="/admin/performance"><span>◆</span>绩效管理</RouterLink>
       </nav>
       <div class="sidebar-footer">
         <RouterLink to="/settings" class="profile-link">

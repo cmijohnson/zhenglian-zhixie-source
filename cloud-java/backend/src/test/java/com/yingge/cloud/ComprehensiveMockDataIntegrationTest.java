@@ -654,6 +654,8 @@ class ComprehensiveMockDataIntegrationTest {
                 .andExpect(jsonPath("$.taskSummary.assignmentCount").isNumber())
                 .andExpect(jsonPath("$.recentTaskPublications").isArray())
                 .andExpect(jsonPath("$.rankings").isArray())
+                .andExpect(jsonPath("$.rankings[0].qualityACustomers").isNumber())
+                .andExpect(jsonPath("$.rankings[0].todayCustomers").isNumber())
                 .andExpect(jsonPath("$.sources").isArray())
                 .andExpect(jsonPath("$.displayMessages").isArray())
                 .andExpect(jsonPath("$.screenSettings.idleTimeoutMinutes").value(20))
@@ -670,10 +672,47 @@ class ComprehensiveMockDataIntegrationTest {
                   )
                 """, Long.class, organizationId, teamA);
         long actualGrade26RankingCustomers = 0;
+        long actualQualityACustomers = 0;
+        long actualTodayCustomers = 0;
         for (JsonNode ranking : leadership.get("rankings")) {
             actualGrade26RankingCustomers += ranking.get("totalCustomers").asLong();
+            actualQualityACustomers += ranking.get("qualityACustomers").asLong();
+            actualTodayCustomers += ranking.get("todayCustomers").asLong();
         }
         assertThat(actualGrade26RankingCustomers).isEqualTo(expectedGrade26RankingCustomers);
+        long expectedQualityACustomers = jdbc.queryForObject("""
+                select count(distinct customer.id)
+                from customers customer
+                join customer_tags customer_tag on customer_tag.customer_id=customer.id
+                join tags tag on tag.id=customer_tag.tag_id
+                where customer.organization_id=? and customer.archived_at is null
+                  and regexp_replace(coalesce(customer.grade, ''), '[^0-9]', '', 'g')
+                      in ('26', '2026')
+                  and customer.owner_membership_id in (
+                    select team_member.membership_id from team_members team_member
+                    where team_member.team_id=?
+                  )
+                  and tag.organization_id=customer.organization_id
+                  and tag.active=true and tag.category='客户质量' and tag.name='A类用户'
+                """, Long.class, organizationId, teamA);
+        long expectedTodayCustomers = jdbc.queryForObject("""
+                select count(distinct customer.id)
+                from customers customer
+                where customer.organization_id=? and customer.archived_at is null
+                  and regexp_replace(coalesce(customer.grade, ''), '[^0-9]', '', 'g')
+                      in ('26', '2026')
+                  and customer.owner_membership_id in (
+                    select team_member.membership_id from team_members team_member
+                    where team_member.team_id=?
+                  )
+                  and customer.created_at >=
+                      (cast(? as date)::timestamp at time zone 'Asia/Shanghai')
+                  and customer.created_at <
+                      ((cast(? as date) + 1)::timestamp at time zone 'Asia/Shanghai')
+                """, Long.class, organizationId, teamA,
+                LocalDate.now(BUSINESS_ZONE), LocalDate.now(BUSINESS_ZONE));
+        assertThat(actualQualityACustomers).isEqualTo(expectedQualityACustomers);
+        assertThat(actualTodayCustomers).isEqualTo(expectedTodayCustomers);
         MvcResult leadershipExport = mockMvc.perform(
                         get("/api/v1/leadership-dashboard/export.xlsx")
                                 .param("days", "30").cookie(adminCookie))
@@ -1209,6 +1248,225 @@ class ComprehensiveMockDataIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.publishedPosts").value(1))
                 .andExpect(jsonPath("$.openReports").value(1));
+    }
+
+    @Test
+    @Order(9)
+    void configurablePerformanceCenterAuditsEvidenceActivitiesLedgerAndSettlement() throws Exception {
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
+        // Keep the end-to-end flow independent from the weekday on which CI runs.
+        jdbc.update("update performance_rule_versions set calendar_mode='ALL_DAYS', weekdays='[1,2,3,4,5,6,7]'::jsonb "
+                        + "where organization_id=? and effective_from<=?",
+                organizationId, today);
+        mockMvc.perform(post("/api/v1/performance/admin/participants").cookie(viewerA.cookie()).with(csrf())
+                        .contentType("application/json").content(objectMapper.writeValueAsString(Map.of(
+                                "membershipId", memberA1.membershipId(), "startsOn", today))))
+                .andExpect(status().isForbidden());
+
+        JsonNode participant = json(mockMvc.perform(post("/api/v1/performance/admin/participants")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "membershipId", memberA1.membershipId(), "startsOn", today))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.activeToday").value(true)).andReturn());
+        mockMvc.perform(post("/api/v1/performance/admin/participants").cookie(adminCookie).with(csrf())
+                        .contentType("application/json").content(objectMapper.writeValueAsString(Map.of(
+                                "membershipId", memberA1.membershipId(), "startsOn", today))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PERFORMANCE_PARTICIPANT_OVERLAP"));
+
+        mockMvc.perform(get("/api/v1/performance/today").cookie(memberA1.cookie()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.participant").value(true))
+                .andExpect(jsonPath("$.rule.dailyBaseline").value(14.0))
+                .andExpect(jsonPath("$.rule.eventTiers[0].label").value("Pro"));
+
+        JsonNode customerPage = json(mockMvc.perform(get("/api/v1/customers")
+                        .param("ownerMembershipId", memberA1.membershipId().toString())
+                        .param("size", "1").cookie(adminCookie))
+                .andExpect(status().isOk()).andReturn());
+        String customerId = customerPage.at("/items/0/id").asText();
+        JsonNode interaction = json(mockMvc.perform(post("/api/v1/customers/{id}/interactions", customerId)
+                        .cookie(memberA1.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "contactedAt", Instant.now().toString(), "channel", "微信",
+                                "summary", "绩效测试深度交流", "details", "客户明确回复并确认下一步安排"))))
+                .andExpect(status().isCreated()).andReturn());
+
+        JsonNode claim = json(mockMvc.perform(post("/api/v1/performance/claims")
+                        .cookie(memberA1.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "interactionId", interaction.get("id").asText(), "requestedType", "DEEP"))))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("DRAFT")).andReturn());
+        mockMvc.perform(post("/api/v1/performance/claims").cookie(memberA1.cookie()).with(csrf())
+                        .contentType("application/json").content(objectMapper.writeValueAsString(Map.of(
+                                "interactionId", interaction.get("id").asText(), "requestedType", "DEEP"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PERFORMANCE_INTERACTION_ALREADY_CLAIMED"));
+
+        MockMultipartFile invalidEvidence = new MockMultipartFile(
+                "file", "fake.png", "image/png", "not-an-image".getBytes(StandardCharsets.UTF_8));
+        mockMvc.perform(multipart("/api/v1/performance/claims/{id}/evidence", claim.get("id").asText())
+                        .file(invalidEvidence).cookie(memberA1.cookie()).with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_EVIDENCE_TYPE"));
+        byte[] png = new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
+        JsonNode evidence = json(mockMvc.perform(multipart("/api/v1/performance/claims/{id}/evidence", claim.get("id").asText())
+                        .file(new MockMultipartFile("file", "claim.png", "image/png", png))
+                        .cookie(memberA1.cookie()).with(csrf()))
+                .andExpect(status().isCreated()).andReturn());
+        mockMvc.perform(post("/api/v1/performance/claims/{id}/submit", claim.get("id").asText())
+                        .cookie(memberA1.cookie()).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PENDING"));
+        mockMvc.perform(post("/api/v1/performance/claims/{id}/review", claim.get("id").asText())
+                        .cookie(managerA.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "decision", "APPROVE", "approvedType", "DEEP", "expectedVersion", 1))))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/performance/claims/{id}/review", claim.get("id").asText())
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "decision", "APPROVE", "approvedType", "DEEP", "expectedVersion", 1))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("APPROVED"));
+        mockMvc.perform(get("/api/v1/performance/evidence/{id}", evidence.get("id").asText())
+                        .cookie(otherOrganizationMember.cookie()))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/performance/claims")
+                        .param("membershipId", memberA2.membershipId().toString()).cookie(memberA1.cookie()))
+                .andExpect(status().isForbidden());
+
+        JsonNode activity = json(mockMvc.perform(post("/api/v1/performance/activities")
+                        .cookie(memberA1.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "eventDate", today, "title", "绩效测试迎新活动", "goal", "验证活动闭环",
+                                "expectedParticipants", 60, "description", "组织现场咨询与答疑"))))
+                .andExpect(status().isCreated()).andReturn());
+        JsonNode approvedActivity = json(mockMvc.perform(post("/api/v1/performance/activities/{id}/review", activity.get("id").asText())
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "decision", "APPROVE", "expectedVersion", 0))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("APPROVED")).andReturn());
+        mockMvc.perform(multipart("/api/v1/performance/activities/{id}/evidence", activity.get("id").asText())
+                        .file(new MockMultipartFile("file", "activity.png", "image/png", png))
+                        .cookie(memberA1.cookie()).with(csrf()))
+                .andExpect(status().isCreated());
+        JsonNode completedActivity = json(mockMvc.perform(post("/api/v1/performance/activities/{id}/complete", activity.get("id").asText())
+                        .cookie(memberA1.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "actualParticipants", 55, "expectedVersion", approvedActivity.get("version").asLong()))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETION_SUBMITTED")).andReturn());
+        mockMvc.perform(post("/api/v1/performance/activities/{id}/allocate", activity.get("id").asText())
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "verifiedParticipants", 55,
+                                "allocations", List.of(Map.of("membershipId", memberA1.membershipId(), "points", 8.0)),
+                                "expectedVersion", completedActivity.get("version").asLong()))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ALLOCATED"))
+                .andExpect(jsonPath("$.totalPoints").value(8.0));
+
+        JsonNode logistics = json(mockMvc.perform(post("/api/v1/performance/admin/manual-entries")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "membershipId", memberA1.membershipId(), "performanceDate", today,
+                                "entryType", "LOGISTICS", "title", "值班后勤", "reason", "完成现场物料整理",
+                                "points", 4.0))))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.points").value(4.0)).andReturn());
+        mockMvc.perform(get("/api/v1/performance/today").cookie(memberA1.cookie()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.score.businessPoints").value(10.0))
+                .andExpect(jsonPath("$.score.logisticsPoints").value(4.0))
+                .andExpect(jsonPath("$.score.shortfall").value(0.0))
+                .andExpect(jsonPath("$.score.finalPoints").value(14.0));
+        mockMvc.perform(get("/api/v1/daily-reports/today").cookie(memberA1.cookie()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.performanceManaged").value(true))
+                .andExpect(jsonPath("$.deepCommunicationCount").value(1));
+
+        Map<String, Object> futureRuleBody = new LinkedHashMap<>();
+        futureRuleBody.put("effectiveFrom", today.plusDays(10));
+        futureRuleBody.put("dailyBaseline", 20.0);
+        futureRuleBody.put("calendarMode", "ALL_DAYS");
+        futureRuleBody.put("weekdays", List.of(1, 2, 3, 4, 5, 6, 7));
+        futureRuleBody.put("includedDates", List.of());
+        futureRuleBody.put("excludedDates", List.of());
+        futureRuleBody.put("submissionOpensAt", "08:30");
+        futureRuleBody.put("submissionClosesAt", "21:30");
+        futureRuleBody.put("shortfallMode", "DEDUCT_GAP");
+        futureRuleBody.put("ordinaryPoints", 1.0);
+        futureRuleBody.put("deepPoints", 2.0);
+        futureRuleBody.put("eventTiers", List.of(Map.of(
+                "label", "Pro", "minParticipants", 50, "points", 8.0)));
+        JsonNode futureRule = json(mockMvc.perform(post("/api/v1/performance/admin/rules")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(futureRuleBody)))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.versionNo").value(2)).andReturn());
+        assertThat(futureRule.get("dailyBaseline").decimalValue()).isEqualByComparingTo("20.0");
+        mockMvc.perform(get("/api/v1/performance/today").cookie(memberA1.cookie()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.rule.dailyBaseline").value(14.0));
+
+        jdbc.update("update performance_days set status='REVIEWING', version=version+1 where organization_id=? and performance_date=?",
+                organizationId, today);
+        JsonNode reviewDay = json(mockMvc.perform(get("/api/v1/performance/admin/days/{date}", today)
+                        .cookie(adminCookie)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendingClaims").value(0)).andExpect(jsonPath("$.pendingActivities").value(0))
+                .andReturn());
+        JsonNode settled = json(mockMvc.perform(post("/api/v1/performance/admin/days/{date}/settle", today)
+                        .param("expectedVersion", reviewDay.get("version").asText())
+                        .cookie(adminCookie).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SETTLED"))
+                .andExpect(jsonPath("$.members[0].settled").value(true)).andReturn());
+        mockMvc.perform(post("/api/v1/performance/admin/manual-entries").cookie(adminCookie).with(csrf())
+                        .contentType("application/json").content(objectMapper.writeValueAsString(Map.of(
+                                "membershipId", memberA1.membershipId(), "performanceDate", today,
+                                "entryType", "LOGISTICS", "title", "锁定后写入", "reason", "不允许",
+                                "points", 1.0))))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("PERFORMANCE_DAY_SETTLED"));
+        JsonNode reopened = json(mockMvc.perform(post("/api/v1/performance/admin/days/{date}/reopen", today)
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "reason", "补录纠错回归测试", "expectedVersion", settled.get("version").asLong()))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("OPEN")).andReturn());
+        assertThat(reopened.get("version").asLong()).isGreaterThan(settled.get("version").asLong());
+        mockMvc.perform(post("/api/v1/performance/admin/manual-entries")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "membershipId", memberA1.membershipId(), "performanceDate", today,
+                                "entryType", "CORRECTION", "title", "后勤纠错", "reason", "冲正误计一分",
+                                "points", -1.0, "relatedLedgerId", logistics.get("id").asText()))))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.points").value(-1.0));
+        assertThat(jdbc.queryForObject("select count(*) from performance_score_ledger where organization_id=? and membership_id=?",
+                Long.class, organizationId, memberA1.membershipId())).isEqualTo(4L);
+        jdbc.update("update performance_days set status='REVIEWING', version=version+1 where organization_id=? and performance_date=?",
+                organizationId, today);
+        JsonNode secondReview = json(mockMvc.perform(get("/api/v1/performance/admin/days/{date}", today)
+                        .cookie(adminCookie)).andExpect(status().isOk()).andReturn());
+        mockMvc.perform(post("/api/v1/performance/admin/days/{date}/settle", today)
+                        .param("expectedVersion", secondReview.get("version").asText())
+                        .cookie(adminCookie).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SETTLED"))
+                .andExpect(jsonPath("$.members[0].score.finalPoints").value(13.0));
+        assertThat(jdbc.queryForObject("""
+                select count(*) from performance_daily_settlements
+                where organization_id=? and performance_date=? and membership_id=?
+                """, Long.class, organizationId, today, memberA1.membershipId())).isEqualTo(2L);
+        assertThat(jdbc.queryForObject("""
+                select count(*) from performance_daily_settlements
+                where organization_id=? and performance_date=? and membership_id=? and active=true
+                """, Long.class, organizationId, today, memberA1.membershipId())).isEqualTo(1L);
+        assertThat(jdbc.queryForObject("""
+                select count(*) from performance_daily_settlements
+                where organization_id=? and performance_date=? and membership_id=?
+                  and active=false and reopened_reason='补录纠错回归测试'
+                """, Long.class, organizationId, today, memberA1.membershipId())).isEqualTo(1L);
+        mockMvc.perform(get("/api/v1/performance/history")
+                        .param("from", today.withDayOfMonth(1).toString()).param("to", today.toString())
+                        .cookie(memberA1.cookie()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].finalPoints").value(13.0));
+
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/performance/today']").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/performance/admin/days/{date}/settle']").exists());
+        assertThat(participant.get("membershipId").asText()).isEqualTo(memberA1.membershipId().toString());
     }
 
     private JsonNode createTeam(String name) throws Exception {
