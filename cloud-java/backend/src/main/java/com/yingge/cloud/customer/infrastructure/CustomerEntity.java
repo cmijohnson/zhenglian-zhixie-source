@@ -57,6 +57,10 @@ public class CustomerEntity {
     private String major;
     private String grade;
     private String city;
+    @Column(name = "high_school")
+    private String highSchool;
+    @Column(name = "source_location")
+    private String sourceLocation;
     @Column(name = "identity_type", nullable = false)
     private String identityType;
     @ElementCollection(fetch = FetchType.LAZY)
@@ -148,6 +152,8 @@ public class CustomerEntity {
         this.major = values.major();
         this.grade = values.grade();
         this.city = values.city();
+        this.highSchool = values.highSchool();
+        this.sourceLocation = values.sourceLocation();
         this.identityType = values.identityType();
         this.focusDirections.clear();
         this.focusDirections.addAll(values.focusDirections());
@@ -221,6 +227,8 @@ public class CustomerEntity {
     public String getMajor() { return major; }
     public String getGrade() { return grade; }
     public String getCity() { return city; }
+    public String getHighSchool() { return highSchool; }
+    public String getSourceLocation() { return sourceLocation; }
     public String getIdentityType() { return identityType; }
     public Set<String> getFocusDirections() { return Set.copyOf(focusDirections); }
     public String getDemandSummary() { return demandSummary; }
@@ -250,7 +258,8 @@ public class CustomerEntity {
     public record CustomerValues(
             UUID ownerMembershipId, UUID teamId, CustomerVisibility visibility, String fullName, String nickname,
             String phone, String normalizedPhone, String wechatId, String normalizedWechatId, String qqId,
-            String normalizedQqId, String school, String major, String grade, String city, String identityType,
+            String normalizedQqId, String school, String major, String grade, String city,
+            String highSchool, String sourceLocation, String identityType,
             Set<String> focusDirections, String demandSummary, String intentionLevel, String urgencyLevel,
             String verificationStatus, UUID sourceDictionaryId, String sourceChannelLegacy, String currentStatus,
             String ownerNotes, Instant nextFollowUpAt, Instant friendAddedAt, Instant friendTrustedAt,

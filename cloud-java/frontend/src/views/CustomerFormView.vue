@@ -43,6 +43,7 @@ const duplicate = ref<{
 }>()
 const form = reactive({
   fullName: '', nickname: '', phone: '', wechatId: '', qqId: '', school: '', major: '', grade: '', city: '',
+  highSchool: '', sourceLocation: '',
   identityType: '在校生', demandSummary: '', intentionLevel: '中', urgencyLevel: '中', verificationStatus: '未核实',
   sourceChannel: '', currentStatus: '初次接触', ownerNotes: '', nextFollowUpAt: '', visibility: 'PRIVATE',
   friendAddedAt: '', friendTrustedAt: '', friendQualifiedAt: '',
@@ -106,6 +107,8 @@ onMounted(async () => {
       major: loadedCustomer.major ?? '',
       grade: normalizeCustomerGrade(loadedCustomer.grade),
       city: loadedCustomer.city ?? '',
+      highSchool: loadedCustomer.highSchool ?? '',
+      sourceLocation: loadedCustomer.sourceLocation ?? '',
       identityType: loadedCustomer.identityType,
       demandSummary: loadedCustomer.demandSummary ?? '',
       intentionLevel: loadedCustomer.intentionLevel,
@@ -325,6 +328,8 @@ async function save() {
             <small v-if="schoolError" class="form-error">{{ schoolError }}</small>
           </div>
           <label>年级<select v-model="form.grade" data-testid="grade-select"><option value="">请选择年级</option><option v-for="year in customerGradeOptions" :key="year" :value="year">{{ year }}级</option><option v-if="legacyGrade" :value="legacyGrade">历史值：{{ legacyGrade }}（请改选）</option></select><small class="field-hint">统一按入学年份保存，年级不再作为客户标签。</small></label><label>所在城市<input v-model.trim="form.city"></label>
+          <label>高中学校<input v-model.trim="form.highSchool" maxlength="200" placeholder="学生入学前所在高中"></label>
+          <label>学生生源地<input v-model.trim="form.sourceLocation" maxlength="200" placeholder="例如：示例省示例市"></label>
           <label>身份类型<select v-model="form.identityType"><option v-for="item in ['新生','转专业','在校生','毕业生','家长代问','其他']" :key="item">{{ item }}</option></select></label>
           <label>当前状态<select v-model="form.currentStatus"><option v-for="item in ['初次接触','待核实','已沟通','跟进中','高意向','待决定','已转化','暂缓','无效']" :key="item">{{ item }}</option></select></label>
           <label>报名意向<select v-model="form.intentionLevel"><option>高</option><option>中</option><option>低</option></select></label>

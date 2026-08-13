@@ -10,8 +10,10 @@ import com.yingge.cloud.auth.application.CurrentActorProvider;
 import com.yingge.cloud.auth.application.RegistrationService;
 import com.yingge.cloud.auth.infrastructure.CloudPrincipal;
 import com.yingge.cloud.content.application.ContentService;
+import com.yingge.cloud.consultation.application.ConsultationService;
 import com.yingge.cloud.customer.application.CustomerService;
 import com.yingge.cloud.customer.application.DashboardService;
+import com.yingge.cloud.followup.application.CustomerFollowUpService;
 import com.yingge.cloud.interaction.application.InteractionService;
 import com.yingge.cloud.mcp.application.McpApprovalService;
 import com.yingge.cloud.mcp.application.McpIdempotencyService;
@@ -108,7 +110,8 @@ class McpToolRegistryTest {
         return new McpToolRegistry(mapper, Validation.buildDefaultValidatorFactory().getValidator(),
                 mock(McpExecutionContext.class), new McpToolResults(mapper), mock(McpIdempotencyService.class),
                 mock(McpApprovalService.class), mock(CurrentActorProvider.class), mock(AuditService.class),
-                mock(DashboardService.class), mock(CustomerService.class), mock(InteractionService.class),
+                mock(DashboardService.class), mock(CustomerService.class), mock(CustomerFollowUpService.class),
+                mock(ConsultationService.class), mock(InteractionService.class),
                 mock(ReminderFacade.class), mock(TaskService.class), mock(ContentService.class),
                 mock(AnnouncementService.class), mock(DailyReportService.class), mock(TeamDataService.class),
                 mock(TagApplicationService.class), mock(AssistantFacade.class), mock(AiSettingsService.class),

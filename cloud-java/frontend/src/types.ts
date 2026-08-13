@@ -41,6 +41,8 @@ export interface Customer {
   major?: string
   grade?: string
   city?: string
+  highSchool?: string
+  sourceLocation?: string
   identityType: string
   focusDirections: string[]
   demandSummary?: string
@@ -151,3 +153,154 @@ export interface AgentApproval {
   decidedAt?: string
   consumedAt?: string
 }
+
+export interface FollowUpRecruitment {
+  id: string
+  customerId: string
+  fullName: string
+  phone?: string
+  wechatId?: string
+  qqId?: string
+  school?: string
+  major?: string
+  grade?: string
+  highSchool?: string
+  sourceLocation?: string
+  demandSummary?: string
+  ownerDisplayName: string
+  requiredCount: number
+  claimedCount: number
+  openedAt: string
+  recentTimeline: { contactedAt: string; channel: string; summary: string; details?: string; outcome?: string }[]
+}
+
+export interface ConsultationSettings {
+  businessStart: string
+  businessEnd: string
+  minimumLeadMinutes: number
+  allowedDurations: number[]
+  dailyCapacity: number
+  feedbackDueHours: number
+  version: number
+}
+
+export interface ConsultantCandidate {
+  membershipId: string
+  displayName: string
+  roles: string[]
+  teams: string[]
+}
+
+export interface ConsultationFailureReason {
+  id: string
+  code: string
+  label: string
+  active: boolean
+  sortOrder: number
+}
+
+export interface Consultation {
+  id: string
+  customerId: string
+  customerName: string
+  customerSnapshot?: Record<string, unknown>
+  createdByMembershipId: string
+  createdByName: string
+  consultantMembershipId: string
+  consultantName: string
+  sourceInteractionIds: string[]
+  consultationReason: string
+  customerQuotes: string
+  goalsMotivation: string
+  actionsTaken: string
+  mainConcerns: string
+  decisionParticipants?: string
+  decisionParticipantConsent: boolean
+  productFit: string
+  suggestedFocus: string
+  explicitTaboos: string
+  expectedResult: string
+  scheduledStart: string
+  scheduledEnd: string
+  status: string
+  rejectionReason?: string
+  acceptedAt?: string
+  actualEndedAt?: string
+  feedbackDueAt?: string
+  resultSummary?: string
+  continueFollowUp?: boolean
+  nextStep?: string
+  nextOwnerMembershipId?: string
+  nextFollowUpAt?: string
+  failureReasonId?: string
+  failureReasonOther?: string
+  resultInteractionId?: string
+  createdAt: string
+  updatedAt: string
+  version: number
+}
+
+export interface QqConnection {
+  id: string
+  status: 'DISCONNECTED' | 'PAIRING' | 'CONNECTED' | 'ERROR' | 'REVOKED'
+  maskedQq?: string
+  qrCodeDataUrl?: string
+  lastHeartbeatAt?: string
+  createdAt: string
+}
+
+export interface QqFriend {
+  uid: string
+  uin: string
+  nick: string
+  remark?: string
+}
+
+export interface QqConversationDraft {
+  summary: string
+  customerQuotes: string[]
+  goalsMotivation: string
+  actionsTaken: string
+  mainConcerns: string
+  decisionParticipants: string
+  productFit: string
+  suggestedFocus: string
+  explicitTaboos: string
+  outcome: string
+  nextStep: string
+  nextFollowUpAt?: string
+  uncertainties: string[]
+  warnings?: string[]
+}
+
+export interface EnrichmentRow {
+  rowNumber: number
+  fullName: string
+  major: string
+  grade: string
+  highSchool: string
+  sourceLocation?: string
+  mappingStatus: string
+  customerId?: string
+  status: string
+  message?: string
+  appliedHighSchool: boolean
+  appliedSourceLocation: boolean
+}
+
+export interface EnrichmentJob {
+  id: string
+  filename: string
+  fileSha256: string
+  status: string
+  totalRows: number
+  readyRows: number
+  updatedRows: number
+  skippedRows: number
+  conflictRows: number
+  expiresAt: string
+  createdAt: string
+  completedAt?: string
+}
+
+export interface EnrichmentPreview { job: EnrichmentJob; rows: EnrichmentRow[] }

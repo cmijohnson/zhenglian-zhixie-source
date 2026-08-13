@@ -3,6 +3,7 @@ package com.yingge.cloud;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yingge.cloud.support.MockDataFactory;
+import com.yingge.cloud.followup.application.CustomerFollowUpService;
 import jakarta.servlet.http.Cookie;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,6 +85,7 @@ class ComprehensiveMockDataIntegrationTest {
     @Autowired ObjectMapper objectMapper;
     @Autowired JdbcTemplate jdbc;
     @Autowired PasswordEncoder passwordEncoder;
+    @Autowired CustomerFollowUpService followUps;
 
     private static boolean fixtureReady;
     private static Cookie adminCookie;
@@ -1255,7 +1257,8 @@ class ComprehensiveMockDataIntegrationTest {
     void configurablePerformanceCenterAuditsEvidenceActivitiesLedgerAndSettlement() throws Exception {
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         // Keep the end-to-end flow independent from the weekday on which CI runs.
-        jdbc.update("update performance_rule_versions set calendar_mode='ALL_DAYS', weekdays='[1,2,3,4,5,6,7]'::jsonb "
+        jdbc.update("update performance_rule_versions set calendar_mode='ALL_DAYS', weekdays='[1,2,3,4,5,6,7]'::jsonb, "
+                        + "submission_opens_at='00:00:00', submission_closes_at='23:59:59' "
                         + "where organization_id=? and effective_from<=?",
                 organizationId, today);
         mockMvc.perform(post("/api/v1/performance/admin/participants").cookie(viewerA.cookie()).with(csrf())
@@ -1469,6 +1472,126 @@ class ComprehensiveMockDataIntegrationTest {
         assertThat(participant.get("membershipId").asText()).isEqualTo(memberA1.membershipId().toString());
     }
 
+    @Test
+    @Order(10)
+    void aClassRecruitmentStaleReminderConsultationAndEnrichmentFormOneClosedLoop() throws Exception {
+        UUID qualityATag = jdbc.queryForObject("""
+                select id from tags where organization_id=? and category='客户质量'
+                  and name='A类用户' and active=true
+                """, UUID.class, organizationId);
+        String unique = UUID.randomUUID().toString().substring(0, 8);
+        String customerName = "协作闭环客户-" + unique;
+        String phone = "137" + String.format("%08d", Math.floorMod(unique.hashCode(), 100_000_000));
+        JsonNode customer = json(mockMvc.perform(post("/api/v1/customers")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "fullName", customerName, "phone", phone,
+                                "major", "计算机科学与技术-" + unique, "grade", "2026",
+                                "ownerMembershipId", memberA1.membershipId(), "teamId", teamA,
+                                "visibility", "PRIVATE", "tagIds", List.of(qualityATag)))))
+                .andExpect(status().isCreated()).andReturn());
+        UUID customerId = UUID.fromString(customer.get("id").asText());
+
+        JsonNode recruitments = json(mockMvc.perform(get("/api/v1/follow-up-recruitments")
+                        .cookie(memberA2.cookie()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].customerId").value(customerId.toString()))
+                .andReturn());
+        String recruitmentId = recruitments.get(0).get("id").asText();
+        mockMvc.perform(post("/api/v1/follow-up-recruitments/{id}/claim", recruitmentId)
+                        .cookie(memberA2.cookie()).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.remainingSlots").value(0));
+        mockMvc.perform(post("/api/v1/follow-up-recruitments/{id}/claim", recruitmentId)
+                        .cookie(memberB1.cookie()).with(csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("RECRUITMENT_CLOSED"));
+        assertThat(jdbc.queryForObject("""
+                select count(*) from customer_access_grants where customer_id=? and grantee_membership_id=? and can_edit=true
+                """, Long.class, customerId, memberA2.membershipId())).isEqualTo(1);
+
+        jdbc.update("update organization_follow_up_policies set notify_at='00:00', stale_after_hours=72 where organization_id=?",
+                organizationId);
+        jdbc.update("update customers set created_at=now()-interval '4 days', last_contact_at=null where id=?", customerId);
+        followUps.createStaleReminders();
+        followUps.createStaleReminders();
+        assertThat(jdbc.queryForObject("""
+                select count(*) from reminders where customer_id=? and reminder_type='A_CLASS_STALE' and status='PENDING'
+                """, Long.class, customerId)).isEqualTo(2);
+
+        JsonNode interaction = json(mockMvc.perform(post("/api/v1/customers/{id}/interactions", customerId)
+                        .cookie(memberA1.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "contactedAt", Instant.now(), "channel", "微信", "summary", "确认咨询目标",
+                                "details", "客户明确希望了解学习规划并同意安排咨询"))))
+                .andExpect(status().isCreated()).andReturn());
+        assertThat(jdbc.queryForObject("""
+                select count(*) from reminders where customer_id=? and reminder_type='A_CLASS_STALE' and status='PENDING'
+                """, Long.class, customerId)).isZero();
+
+        Instant scheduledStart = LocalDate.now(BUSINESS_ZONE).plusDays(1).atTime(10, 0)
+                .atZone(BUSINESS_ZONE).toInstant();
+        Instant scheduledEnd = scheduledStart.plusSeconds(60 * 60);
+        Map<String, Object> handoffBody = new LinkedHashMap<>();
+        handoffBody.put("customerId", customerId);
+        handoffBody.put("consultantMembershipId", memberA2.membershipId());
+        handoffBody.put("sourceInteractionIds", List.of(interaction.get("id").asText()));
+        handoffBody.put("consultationReason", "客户希望获得进一步咨询");
+        handoffBody.put("customerQuotes", "我希望了解下一步学习规划");
+        handoffBody.put("goalsMotivation", "明确学习方向");
+        handoffBody.put("actionsTaken", "已完成基础沟通");
+        handoffBody.put("mainConcerns", "时间安排");
+        handoffBody.put("decisionParticipantConsent", false);
+        handoffBody.put("productFit", "适合规划咨询");
+        handoffBody.put("suggestedFocus", "课程与时间线");
+        handoffBody.put("explicitTaboos", "不得承诺无法核实的结果");
+        handoffBody.put("expectedResult", "形成下一步方案");
+        handoffBody.put("scheduledStart", scheduledStart);
+        handoffBody.put("scheduledEnd", scheduledEnd);
+        JsonNode handoff = json(mockMvc.perform(post("/api/v1/consultations")
+                        .cookie(memberA1.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(handoffBody)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PENDING_ACCEPTANCE"))
+                .andExpect(jsonPath("$.customerSnapshot.fullName").value(customerName)).andReturn());
+        String consultationId = handoff.get("id").asText();
+        JsonNode accepted = json(mockMvc.perform(post("/api/v1/consultations/{id}/accept", consultationId)
+                        .cookie(memberA2.cookie()).with(csrf()).contentType("application/json")
+                        .content("{\"expectedVersion\":0}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED")).andReturn());
+        JsonNode completed = json(mockMvc.perform(post("/api/v1/consultations/{id}/complete", consultationId)
+                        .cookie(memberA2.cookie()).with(csrf()).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "expectedVersion", accepted.get("version").asLong(),
+                                "resultSummary", "已完成规划咨询并确认推进", "continueFollowUp", true,
+                                "nextStep", "三天后确认执行进度", "nextOwnerMembershipId", memberA2.membershipId(),
+                                "nextFollowUpAt", Instant.now().plusSeconds(3 * 86400)))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.resultInteractionId").isString()).andReturn());
+        assertThat(jdbc.queryForObject("""
+                select assigned_membership_id from reminders where interaction_id=? and status='PENDING'
+                """, UUID.class, UUID.fromString(completed.get("resultInteractionId").asText())))
+                .isEqualTo(memberA2.membershipId());
+        mockMvc.perform(get("/api/v1/consultations/{id}", consultationId)
+                        .cookie(otherOrganizationMember.cookie()))
+                .andExpect(status().isNotFound());
+
+        byte[] workbook = enrichmentFixture(customerName, "计算机科学与技术-" + unique, "2026",
+                "测试高级中学-" + unique, "示例省示例市");
+        JsonNode preview = json(mockMvc.perform(multipart("/api/v1/admin/customer-enrichment-jobs/preview")
+                .file(new MockMultipartFile("file", "学生所在地补全.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", workbook))
+                        .cookie(adminCookie).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.job.readyRows").value(1)).andReturn());
+        String jobId = preview.at("/job/id").asText();
+        mockMvc.perform(post("/api/v1/admin/customer-enrichment-jobs/{id}/commit", jobId)
+                        .cookie(adminCookie).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.job.updatedRows").value(1));
+        mockMvc.perform(get("/api/v1/customers/{id}", customerId).cookie(memberA1.cookie()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.highSchool").value("测试高级中学-" + unique))
+                .andExpect(jsonPath("$.sourceLocation").value("示例省示例市"));
+        mockMvc.perform(get("/api/v1/admin/customer-enrichment-jobs").cookie(memberA1.cookie()))
+                .andExpect(status().isForbidden());
+    }
+
     private JsonNode createTeam(String name) throws Exception {
         return json(mockMvc.perform(post("/api/v1/admin/teams").cookie(adminCookie).with(csrf())
                         .contentType("application/json")
@@ -1589,6 +1712,34 @@ class ComprehensiveMockDataIntegrationTest {
                 row.createCell(1).setCellValue("1550000000" + index);
                 row.createCell(2).setCellValue("26级");
             }
+            workbook.write(output);
+            return output.toByteArray();
+        }
+    }
+
+    private byte[] enrichmentFixture(String name, String major, String grade, String highSchool,
+                                     String sourceLocation) throws Exception {
+        try (var workbook = new XSSFWorkbook(); var output = new ByteArrayOutputStream()) {
+            var source = workbook.createSheet("Sheet1");
+            var sourceHeader = source.createRow(0);
+            sourceHeader.createCell(0).setCellValue("姓名");
+            sourceHeader.createCell(1).setCellValue("专业");
+            sourceHeader.createCell(2).setCellValue("年级");
+            sourceHeader.createCell(3).setCellValue("入学前单位");
+            var sourceRow = source.createRow(1);
+            sourceRow.createCell(0).setCellValue(name);
+            sourceRow.createCell(1).setCellValue(major);
+            sourceRow.createCell(2).setCellValue(grade);
+            sourceRow.createCell(3).setCellValue(highSchool);
+            var mapping = workbook.createSheet("所在地映射");
+            var mappingHeader = mapping.createRow(0);
+            mappingHeader.createCell(0).setCellValue("入学前单位");
+            mappingHeader.createCell(1).setCellValue("所在地");
+            mappingHeader.createCell(2).setCellValue("状态");
+            var mappingRow = mapping.createRow(1);
+            mappingRow.createCell(0).setCellValue(highSchool);
+            mappingRow.createCell(1).setCellValue(sourceLocation);
+            mappingRow.createCell(2).setCellValue("已匹配");
             workbook.write(output);
             return output.toByteArray();
         }

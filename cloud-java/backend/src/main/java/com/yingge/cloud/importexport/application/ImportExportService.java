@@ -253,7 +253,8 @@ public class ImportExportService {
         return new CustomerDtos.UpsertRequest(
                 fullName == null ? "" : fullName, value(row, "昵称", "nickname"), phone, wechat, qq,
                 value(row, "学校", "school"), value(row, "专业", "major"), value(row, "年级", "grade"),
-                value(row, "城市", "city"), value(row, "身份类型", "identitytype"), focus.values(),
+                value(row, "城市", "city"), value(row, "高中学校", "highschool"),
+                value(row, "生源地", "sourcelocation"), value(row, "身份类型", "identitytype"), focus.values(),
                 value(row, "需求摘要", "demandsummary"), value(row, "报名意向", "意向", "intentionlevel"),
                 value(row, "紧急程度", "urgencylevel"), value(row, "核实状态", "verificationstatus"),
                 null, value(row, "来源渠道", "sourcechannel"), value(row, "当前状态", "currentstatus"),

@@ -16,7 +16,7 @@ public interface ReminderRepository extends JpaRepository<ReminderEntity, UUID> 
     @Modifying
     @Query("""
             update ReminderEntity r set r.status='COMPLETED', r.completedAt=:now, r.updatedAt=:now
-            where r.customerId=:customerId and r.status='PENDING'
+            where r.customerId=:customerId and r.status='PENDING' and r.reminderType='MANUAL'
             """)
     int completeActive(UUID customerId, Instant now);
 
@@ -25,7 +25,7 @@ public interface ReminderRepository extends JpaRepository<ReminderEntity, UUID> 
             update ReminderEntity r
             set r.assignedMembershipId=:targetMembershipId, r.updatedAt=:now
             where r.customerId=:customerId and r.assignedMembershipId=:previousMembershipId
-              and r.status='PENDING'
+              and r.status='PENDING' and r.reminderType in ('MANUAL','A_CLASS_STALE')
             """)
     int transferPending(UUID customerId, UUID previousMembershipId, UUID targetMembershipId, Instant now);
 

@@ -80,6 +80,61 @@ public class AssistantFacade {
         return structured("PARSE_INTERACTION_DRAFT", null, PRIVACY_SYSTEM + schema, text, AssistantDtos.InteractionDraft.class);
     }
 
+    public AssistantDtos.QqConversationDraft summarizeQqConversation(UUID customerId, String messages) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        customers.requireVisibleEntity(customerId, actor);
+        String schema = """
+                把工作 QQ 私聊整理为严格 JSON。字段：summary,customerQuotes(数组),goalsMotivation,
+                actionsTaken,mainConcerns,decisionParticipants,productFit,suggestedFocus,explicitTaboos,
+                outcome,nextStep,nextFollowUpAt(ISO-8601或null),uncertainties(数组)。
+                只能使用消息中的事实；无法确认时填“未确认”并加入 uncertainties。
+                decisionParticipants 只提取对话中客户自愿明确提及的必要事实，不推断家庭信息。
+                customerQuotes 只选最关键的短句，不超过 8 条。
+                """;
+        String bounded = messages == null ? "" : messages.substring(0, Math.min(messages.length(), 60_000));
+        return structured("QQ_CONVERSATION_DRAFT", customerId, PRIVACY_SYSTEM + schema,
+                bounded, AssistantDtos.QqConversationDraft.class);
+    }
+
+    @Transactional
+    public AssistantDtos.ConsultationDraft consultationDraft(UUID customerId) {
+        var actor = actors.require();
+        permissions.requireAssistant(actor);
+        CustomerEntity customer = customers.requireVisibleEntity(customerId, actor);
+        var timeline = interactions.list(customerId).stream().limit(50).toList();
+        if (timeline.isEmpty()) {
+            throw ApiException.badRequest("CONSULTATION_TIMELINE_REQUIRED", "请先记录真实沟通，再生成咨询交接草稿");
+        }
+        String schema = """
+                根据单个客户档案和时间线生成严格 JSON 咨询交接草稿。字段：consultationReason,
+                customerQuotes,goalsMotivation,actionsTaken,mainConcerns,decisionParticipants,productFit,
+                suggestedFocus,explicitTaboos,expectedResult,citations(数组，每项 interactionId 和 evidence),
+                uncertainties(数组)。只能使用输入中的事实，无法确认时填“未确认”并列入 uncertainties；
+                每条事实引用的 interactionId 必须来自输入时间线；不得推断家庭或决策参与人信息。
+                """;
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("customer", Map.of("name", customer.getFullName(), "school", nullSafe(customer.getSchool()),
+                "major", nullSafe(customer.getMajor()), "grade", nullSafe(customer.getGrade()),
+                "demand", nullSafe(customer.getDemandSummary()), "status", customer.getCurrentStatus()));
+        context.put("timeline", timeline);
+        AssistantDtos.ConsultationDraft generated = structured("CONSULTATION_HANDOFF_DRAFT", customerId,
+                PRIVACY_SYSTEM + schema, json(context), AssistantDtos.ConsultationDraft.class);
+        var allowed = timeline.stream().map(item -> item.id()).collect(java.util.stream.Collectors.toSet());
+        List<AssistantDtos.InteractionCitation> citations = generated.citations() == null ? List.of()
+                : generated.citations().stream().filter(item -> item != null && item.interactionId() != null
+                        && allowed.contains(item.interactionId())).limit(50).toList();
+        List<String> uncertainties = generated.uncertainties() == null ? List.of() : generated.uncertainties();
+        if (citations.isEmpty()) {
+            uncertainties = new java.util.ArrayList<>(uncertainties);
+            uncertainties.add("AI 未提供有效时间线引用，请人工选择来源记录");
+        }
+        return new AssistantDtos.ConsultationDraft(generated.consultationReason(), generated.customerQuotes(),
+                generated.goalsMotivation(), generated.actionsTaken(), generated.mainConcerns(),
+                generated.decisionParticipants(), generated.productFit(), generated.suggestedFocus(),
+                generated.explicitTaboos(), generated.expectedResult(), citations, List.copyOf(uncertainties));
+    }
+
     @Transactional
     public String summarizeCustomerTimeline(UUID customerId) {
         var actor = actors.require();

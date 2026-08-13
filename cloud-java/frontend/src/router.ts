@@ -31,6 +31,10 @@ import AgentApprovalView from './views/AgentApprovalView.vue'
 import LeadershipDashboardView from './views/LeadershipDashboardView.vue'
 import PerformanceView from './views/PerformanceView.vue'
 import AdminPerformanceView from './views/AdminPerformanceView.vue'
+import QqChatView from './views/QqChatView.vue'
+import ConsultationsView from './views/ConsultationsView.vue'
+import AdminFollowUpSettingsView from './views/AdminFollowUpSettingsView.vue'
+import AdminCustomerEnrichmentView from './views/AdminCustomerEnrichmentView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -60,6 +64,8 @@ const router = createRouter({
         { path: 'leadership-dashboard', component: LeadershipDashboardView, meta: { teamData: true } },
         { path: 'daily-report', component: DailyReportView },
         { path: 'performance', component: PerformanceView },
+        { path: 'consultations', component: ConsultationsView },
+        { path: 'qq-chat', component: QqChatView, meta: { writable: true } },
         { path: 'imports', component: ImportsView, meta: { bulk: true } },
         { path: 'exports', component: ExportsView, meta: { bulk: true } },
         { path: 'assistant', component: AssistantView },
@@ -74,6 +80,8 @@ const router = createRouter({
         { path: 'admin/leadership-screen', component: AdminLeadershipScreenSettingsView, meta: { admin: true } },
         { path: 'admin/agents', component: AdminAgentsView, meta: { admin: true } },
         { path: 'admin/performance', component: AdminPerformanceView, meta: { admin: true } },
+        { path: 'admin/follow-up', component: AdminFollowUpSettingsView, meta: { admin: true } },
+        { path: 'admin/customer-enrichment', component: AdminCustomerEnrichmentView, meta: { admin: true } },
         { path: 'settings', component: SettingsView },
       ],
     },
@@ -88,6 +96,7 @@ router.beforeEach(async (to) => {
   if (to.meta.admin && !auth.isAdmin) return '/dashboard'
   if (to.meta.bulk && !auth.canBulkTransfer) return '/dashboard'
   if (to.meta.teamData && !auth.canViewTeamData) return '/dashboard'
+  if (to.meta.writable && !auth.canWriteCustomers) return '/dashboard'
   return true
 })
 

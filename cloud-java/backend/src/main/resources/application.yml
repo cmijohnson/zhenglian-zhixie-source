@@ -98,3 +98,10 @@ app:
     approval-ttl: 5m
     session-idle-ttl: 30m
     max-sessions-per-grant: 5
+  qq:
+    bridge-base-url: ${QQ_BRIDGE_BASE_URL:}
+    bridge-token: ${QQ_BRIDGE_SHARED_TOKEN:}
+    master-key: ${QQ_DATA_MASTER_KEY:}
+    retention-dir: ${QQ_RETENTION_DIR:/data/qq-imports}
+    retention-days: 30
+    max-messages-per-import: 10000

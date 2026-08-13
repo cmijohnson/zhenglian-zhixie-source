@@ -11,6 +11,7 @@ import com.yingge.cloud.customer.infrastructure.CustomerAccessGrantRepository;
 import com.yingge.cloud.customer.infrastructure.CustomerEntity;
 import com.yingge.cloud.customer.infrastructure.CustomerRepository;
 import com.yingge.cloud.customer.infrastructure.CustomerSpecifications;
+import com.yingge.cloud.followup.application.CustomerFollowUpService;
 import com.yingge.cloud.permission.application.PermissionService;
 import com.yingge.cloud.permission.domain.CurrentActor;
 import com.yingge.cloud.reminder.application.ReminderPort;
@@ -51,11 +52,13 @@ public class CustomerService {
     private final AuditService audit;
     private final EntityManager entityManager;
     private final NamedParameterJdbcTemplate jdbc;
+    private final CustomerFollowUpService followUps;
 
     public CustomerService(CustomerRepository customers, CustomerAccessGrantRepository grants, TagRepository tags,
                            DictionaryItemRepository dictionaries, CurrentActorProvider actors,
                            PermissionService permissions, ReminderPort reminders, AuditService audit,
-                           EntityManager entityManager, NamedParameterJdbcTemplate jdbc) {
+                           EntityManager entityManager, NamedParameterJdbcTemplate jdbc,
+                           CustomerFollowUpService followUps) {
         this.customers = customers;
         this.grants = grants;
         this.tags = tags;
@@ -66,6 +69,7 @@ public class CustomerService {
         this.audit = audit;
         this.entityManager = entityManager;
         this.jdbc = jdbc;
+        this.followUps = followUps;
     }
 
     @Transactional(readOnly = true)
@@ -161,6 +165,7 @@ public class CustomerService {
         }
         audit.record(actor, "CUSTOMER_COLLABORATORS_UPDATED", "CUSTOMER", customer.getId().toString(), "SUCCESS",
                 java.util.Map.of("collaboratorCount", requested.size()));
+        followUps.reconcileCustomer(actor.organizationId(), customer.getId());
         return collaborationOverview(customer, actor);
     }
 
@@ -246,6 +251,7 @@ public class CustomerService {
                 duplicate.requiresConfirmation()
                         ? java.util.Map.of("duplicateOverrideReason", body.duplicateOverrideReason())
                         : null);
+        followUps.reconcileCustomer(actor.organizationId(), saved.getId());
         return CustomerDtos.Response.from(saved);
     }
 
@@ -280,6 +286,7 @@ public class CustomerService {
                 duplicate.requiresConfirmation()
                         ? java.util.Map.of("duplicateOverrideReason", body.duplicateOverrideReason())
                         : null);
+        followUps.reconcileCustomer(actor.organizationId(), customer.getId());
         return CustomerDtos.Response.from(customer);
     }
 
@@ -291,6 +298,7 @@ public class CustomerService {
         requireEditable(customer, actor);
         customer.archive();
         reminders.cancelActive(id, actor);
+        followUps.reconcileCustomer(actor.organizationId(), id);
         audit.record(actor, "CUSTOMER_ARCHIVED", "CUSTOMER", id.toString(), "SUCCESS", null);
     }
 
@@ -594,7 +602,8 @@ public class CustomerService {
                 owner, teamId, visibility, fullName, TextNormalizer.optional(body.nickname()), phone,
                 TextNormalizer.contact(phone), wechat, TextNormalizer.contact(wechat), qq, TextNormalizer.contact(qq),
                 TextNormalizer.optional(body.school()), TextNormalizer.optional(body.major()), CustomerOptions.normalizeGrade(body.grade()),
-                TextNormalizer.optional(body.city()), identity, directions, TextNormalizer.optional(body.demandSummary()),
+                TextNormalizer.optional(body.city()), TextNormalizer.optional(body.highSchool()),
+                TextNormalizer.optional(body.sourceLocation()), identity, directions, TextNormalizer.optional(body.demandSummary()),
                 intention, urgency, verification, body.sourceDictionaryId(), TextNormalizer.optional(body.sourceChannel()), status,
                 TextNormalizer.optional(body.ownerNotes()), body.nextFollowUpAt(),
                 body.friendAddedAt(), body.friendTrustedAt(), body.friendQualifiedAt(), tagSet

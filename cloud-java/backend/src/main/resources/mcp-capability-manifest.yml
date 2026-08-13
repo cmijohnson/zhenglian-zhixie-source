@@ -150,3 +150,37 @@ operations:
   - { operation: TaskController#close, classification: TOOL, capability: yingge_task_close }
   - { operation: TaskController#delete, classification: TOOL, capability: yingge_task_delete }
   - { operation: TeamDataController#overview, classification: TOOL, capability: yingge_team_data_overview }
+  - { operation: FollowUpController#recruitments, classification: TOOL, capability: yingge_follow_up_recruitment_list }
+  - { operation: FollowUpController#claim, classification: TOOL, capability: yingge_follow_up_recruitment_claim }
+  - { operation: FollowUpController#policy, classification: TOOL, capability: yingge_admin_follow_up_policy_get }
+  - { operation: FollowUpController#updatePolicy, classification: TOOL, capability: yingge_admin_follow_up_policy_update }
+  - { operation: ConsultationController#list, classification: TOOL, capability: yingge_consultation_list }
+  - { operation: ConsultationController#get, classification: TOOL, capability: yingge_consultation_get }
+  - { operation: ConsultationController#candidates, classification: TOOL, capability: yingge_consultation_candidates }
+  - { operation: ConsultationController#draft, classification: TOOL, capability: yingge_consultation_draft }
+  - { operation: ConsultationController#publicSettings, classification: RESOURCE, capability: yingge_consultation_settings }
+  - { operation: ConsultationController#create, classification: TOOL, capability: yingge_consultation_create }
+  - { operation: ConsultationController#accept, classification: TOOL, capability: yingge_consultation_accept }
+  - { operation: ConsultationController#reject, classification: TOOL, capability: yingge_consultation_reject }
+  - { operation: ConsultationController#cancel, classification: TOOL, capability: yingge_consultation_cancel }
+  - { operation: ConsultationController#end, classification: TOOL, capability: yingge_consultation_end }
+  - { operation: ConsultationController#complete, classification: TOOL, capability: yingge_consultation_complete }
+  - { operation: ConsultationController#settings, classification: TOOL, capability: yingge_admin_consultation_settings_get }
+  - { operation: ConsultationController#updateSettings, classification: TOOL, capability: yingge_admin_consultation_settings_update }
+  - { operation: ConsultationController#failureReasons, classification: TOOL, capability: yingge_consultation_failure_reasons }
+  - { operation: ConsultationController#createFailureReason, classification: TOOL, capability: yingge_admin_consultation_failure_reason_create }
+  - { operation: ConsultationController#updateFailureReason, classification: TOOL, capability: yingge_admin_consultation_failure_reason_update }
+  - { operation: CustomerEnrichmentController#jobs, classification: DEFERRED_FILES, capability: customer-enrichment-jobs }
+  - { operation: CustomerEnrichmentController#preview, classification: DEFERRED_FILES, capability: customer-enrichment-preview }
+  - { operation: CustomerEnrichmentController#report, classification: DEFERRED_FILES, capability: customer-enrichment-report }
+  - { operation: CustomerEnrichmentController#commit, classification: DEFERRED_FILES, capability: customer-enrichment-commit }
+  - { operation: CustomerEnrichmentController#download, classification: DEFERRED_FILES, capability: customer-enrichment-report-download }
+  - { operation: QqController#mine, classification: CONTROL_PLANE, capability: qq-connection-status }
+  - { operation: QqController#create, classification: CONTROL_PLANE, capability: qq-connection-create }
+  - { operation: QqController#revokeMine, classification: CONTROL_PLANE, capability: qq-connection-revoke }
+  - { operation: QqController#friends, classification: CONTROL_PLANE, capability: qq-friend-selection }
+  - { operation: QqController#preview, classification: CONTROL_PLANE, capability: qq-chat-preview }
+  - { operation: QqController#confirm, classification: TOOL, capability: yingge_qq_follow_up_confirm }
+  - { operation: QqController#raw, classification: DEFERRED_FILES, capability: qq-private-raw-chat }
+  - { operation: QqController#adminConnections, classification: CONTROL_PLANE, capability: qq-admin-connection-health }
+  - { operation: QqController#revoke, classification: CONTROL_PLANE, capability: qq-admin-connection-revoke }

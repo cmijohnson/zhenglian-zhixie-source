@@ -25,7 +25,7 @@ class FlywayPostgresIntegrationTest {
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
-        assertThat(result.migrationsExecuted).isEqualTo(22);
+        assertThat(result.migrationsExecuted).isEqualTo(23);
 
         try (var connection = DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
              var statement = connection.createStatement()) {
@@ -151,6 +151,30 @@ class FlywayPostgresIntegrationTest {
                     """)) {
                 assertThat(performanceTables.next()).isTrue();
                 assertThat(performanceTables.getInt(1)).isEqualTo(10);
+            }
+            try (var collaborationTables = statement.executeQuery("""
+                    select count(*) from information_schema.tables where table_schema='public'
+                    and table_name in ('organization_follow_up_policies','follow_up_recruitments',
+                      'follow_up_recruitment_claims','consultation_settings','consultation_failure_reasons',
+                      'consultation_handoffs','qq_connections','qq_imports',
+                      'customer_enrichment_jobs','customer_enrichment_rows')
+                    """)) {
+                assertThat(collaborationTables.next()).isTrue();
+                assertThat(collaborationTables.getInt(1)).isEqualTo(10);
+            }
+            try (var enrichmentColumns = statement.executeQuery("""
+                    select count(*) from information_schema.columns where table_name='customers'
+                    and column_name in ('high_school','source_location')
+                    """)) {
+                assertThat(enrichmentColumns.next()).isTrue();
+                assertThat(enrichmentColumns.getInt(1)).isEqualTo(2);
+            }
+            try (var automaticReminderIndex = statement.executeQuery("""
+                    select count(*) from pg_indexes where schemaname='public'
+                    and indexname='uq_pending_automatic_reminder'
+                    """)) {
+                assertThat(automaticReminderIndex.next()).isTrue();
+                assertThat(automaticReminderIndex.getInt(1)).isEqualTo(1);
             }
             String organizationId = java.util.UUID.randomUUID().toString();
             statement.executeUpdate("""

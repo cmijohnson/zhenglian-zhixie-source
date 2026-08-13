@@ -17,11 +17,13 @@ const primaryLinks = computed(() => [
 ])
 const dailyExecutionLinks = [
   { to: '/performance', label: '绩效中心', icon: '◆', show: true },
+  { to: '/consultations', label: '咨询交接', icon: '⇄', show: true },
   { to: '/daily-report', label: '每日汇报', icon: '≡', show: true },
   { to: '/content-tasks', label: '内容任务', icon: '◈', show: true },
 ]
 const toolLinks = computed(() => [
   { to: '/assistant', label: '智能助手', icon: '✦', show: true },
+  { to: '/qq-chat', label: 'QQ 对话', icon: '◌', show: auth.canWriteCustomers },
   { to: '/agent', label: '我的 Agent', icon: '⌘', show: true },
   { to: '/imports', label: '批量导入', icon: '⇥', show: auth.canBulkTransfer },
   { to: '/exports', label: '数据导出', icon: '⇤', show: auth.canBulkTransfer },
@@ -61,6 +63,8 @@ async function logout() {
         <RouterLink v-if="auth.isAdmin" to="/admin/leadership-screen"><span>◈</span>大屏设置</RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/admin/agents"><span>⌘</span>Agent 管理</RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/admin/performance"><span>◆</span>绩效管理</RouterLink>
+        <RouterLink v-if="auth.isAdmin" to="/admin/follow-up"><span>⇄</span>跟进与咨询设置</RouterLink>
+        <RouterLink v-if="auth.isAdmin" to="/admin/customer-enrichment"><span>⊕</span>客户资料补全</RouterLink>
       </nav>
       <div class="sidebar-footer">
         <RouterLink to="/settings" class="profile-link">

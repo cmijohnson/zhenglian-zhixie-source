@@ -15,9 +15,12 @@ import com.yingge.cloud.content.api.ContentDtos;
 import com.yingge.cloud.content.application.ContentService;
 import com.yingge.cloud.content.domain.ContentPlatform;
 import com.yingge.cloud.content.domain.ContentReviewStatus;
+import com.yingge.cloud.consultation.api.ConsultationDtos;
+import com.yingge.cloud.consultation.application.ConsultationService;
 import com.yingge.cloud.customer.api.CustomerDtos;
 import com.yingge.cloud.customer.application.CustomerService;
 import com.yingge.cloud.customer.application.DashboardService;
+import com.yingge.cloud.followup.application.CustomerFollowUpService;
 import com.yingge.cloud.interaction.api.InteractionDtos;
 import com.yingge.cloud.interaction.application.InteractionService;
 import com.yingge.cloud.mcp.application.McpApprovalService;
@@ -86,6 +89,8 @@ public class McpToolRegistry {
     private final AuditService audit;
     private final DashboardService dashboard;
     private final CustomerService customers;
+    private final CustomerFollowUpService followUps;
+    private final ConsultationService consultations;
     private final InteractionService interactions;
     private final ReminderFacade reminders;
     private final TaskService tasks;
@@ -105,6 +110,7 @@ public class McpToolRegistry {
                            McpToolResults results, McpIdempotencyService idempotency,
                            McpApprovalService approvals, CurrentActorProvider actors, AuditService audit,
                            DashboardService dashboard, CustomerService customers,
+                           CustomerFollowUpService followUps, ConsultationService consultations,
                            InteractionService interactions, ReminderFacade reminders, TaskService tasks,
                            ContentService content, AnnouncementService announcements,
                            DailyReportService reports, TeamDataService teamData, TagApplicationService tags,
@@ -121,6 +127,8 @@ public class McpToolRegistry {
         this.audit = audit;
         this.dashboard = dashboard;
         this.customers = customers;
+        this.followUps = followUps;
+        this.consultations = consultations;
         this.interactions = interactions;
         this.reminders = reminders;
         this.tasks = tasks;
@@ -179,6 +187,28 @@ public class McpToolRegistry {
                 idBodySchema("customerId", CustomerDtos.UpdateCollaboratorsRequest.class, false), false, call ->
                         customers.replaceCollaborators(parseUuid(call.arguments(), "customerId"),
                                 body(call, CustomerDtos.UpdateCollaboratorsRequest.class))));
+
+        tools.add(read("yingge_follow_up_recruitment_list", "查询重点客户协作招募",
+                "查询本组织尚可领取的 A 类客户协作招募及其 CRM 摘要。",
+                McpToolSchemas.empty(), call -> followUps.openRecruitments()));
+        tools.add(write("yingge_follow_up_recruitment_claim", "领取重点客户协作",
+                "领取一个 A 类客户协作名额，并获得同一档案的时间线编辑权限。",
+                idWriteSchema("recruitmentId", false), false,
+                call -> followUps.claim(parseUuid(call.arguments(), "recruitmentId"))));
+
+        tools.add(read("yingge_consultation_list", "查询咨询交接", "查询本人权限范围内的咨询交接记录。",
+                McpToolSchemas.empty(), call -> consultations.list()));
+        tools.add(read("yingge_consultation_get", "读取咨询交接", "读取一条有权访问的咨询交接卡及结果。",
+                McpToolSchemas.fields(Map.of("consultationId", uuid()), "consultationId"),
+                call -> consultations.get(parseUuid(call.arguments(), "consultationId"))));
+        tools.add(aiRead("yingge_consultation_draft", "生成咨询交接草稿",
+                "只基于现有客户时间线生成带来源引用的咨询交接草稿。",
+                McpToolSchemas.fields(Map.of("customerId", uuid()), "customerId"),
+                call -> consultations.draft(parseUuid(call.arguments(), "customerId"))));
+        tools.add(write("yingge_consultation_create", "提交咨询交接",
+                "提交已人工确认且带来源引用的咨询交接卡，支持幂等重试。",
+                bodySchema(ConsultationDtos.CreateRequest.class, false), false,
+                call -> consultations.create(body(call, ConsultationDtos.CreateRequest.class))));
 
         tools.add(read("yingge_interaction_list", "读取沟通时间线", "读取客户统一沟通时间线。",
                 McpToolSchemas.fields(Map.of("customerId", uuid()), "customerId"),

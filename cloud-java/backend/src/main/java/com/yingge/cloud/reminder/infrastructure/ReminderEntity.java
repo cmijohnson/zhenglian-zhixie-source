@@ -7,6 +7,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -30,6 +31,12 @@ public class ReminderEntity {
     private String status;
     @Column(name = "delivery_status", nullable = false)
     private String deliveryStatus;
+    @Column(name = "reminder_type", nullable = false)
+    private String reminderType;
+    @Column(name = "automatic_day")
+    private LocalDate automaticDay;
+    @Column(name = "related_resource_id")
+    private UUID relatedResourceId;
     @Column(name = "completed_at")
     private Instant completedAt;
     @Column(name = "created_at", nullable = false)
@@ -53,6 +60,7 @@ public class ReminderEntity {
         this.title = title;
         this.status = "PENDING";
         this.deliveryStatus = "UNSENT";
+        this.reminderType = "MANUAL";
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
@@ -80,9 +88,11 @@ public class ReminderEntity {
     public String getTitle() { return title; }
     public String getStatus() { return status; }
     public String getDeliveryStatus() { return deliveryStatus; }
+    public String getReminderType() { return reminderType; }
+    public LocalDate getAutomaticDay() { return automaticDay; }
+    public UUID getRelatedResourceId() { return relatedResourceId; }
     public Instant getCompletedAt() { return completedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public long getVersion() { return version; }
 }
-

@@ -5,6 +5,7 @@ import com.yingge.cloud.auth.application.CurrentActorProvider;
 import com.yingge.cloud.customer.application.CustomerService;
 import com.yingge.cloud.customer.domain.CustomerOptions;
 import com.yingge.cloud.customer.domain.CustomerQuality;
+import com.yingge.cloud.followup.application.CustomerFollowUpService;
 import com.yingge.cloud.interaction.api.InteractionDtos;
 import com.yingge.cloud.interaction.infrastructure.InteractionEntity;
 import com.yingge.cloud.interaction.infrastructure.InteractionRepository;
@@ -14,6 +15,7 @@ import com.yingge.cloud.shared.api.ApiException;
 import com.yingge.cloud.shared.domain.TextNormalizer;
 import com.yingge.cloud.tag.infrastructure.TagEntity;
 import com.yingge.cloud.tag.infrastructure.TagRepository;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,10 +33,13 @@ public class InteractionService {
     private final CurrentActorProvider actors;
     private final PermissionService permissions;
     private final AuditService audit;
+    private final CustomerFollowUpService followUps;
+    private final EntityManager entityManager;
 
     public InteractionService(InteractionRepository interactions, CustomerService customers, TagRepository tags,
                               ReminderPort reminders, CurrentActorProvider actors,
-                              PermissionService permissions, AuditService audit) {
+                              PermissionService permissions, AuditService audit,
+                              CustomerFollowUpService followUps, EntityManager entityManager) {
         this.interactions = interactions;
         this.customers = customers;
         this.tags = tags;
@@ -42,6 +47,8 @@ public class InteractionService {
         this.actors = actors;
         this.permissions = permissions;
         this.audit = audit;
+        this.followUps = followUps;
+        this.entityManager = entityManager;
     }
 
     @Transactional(readOnly = true)
@@ -83,8 +90,14 @@ public class InteractionService {
         }
         reminders.replacePending(customerId, interaction.getId(), customer.getOwnerMembershipId(),
                 body.nextFollowUpAt(), "跟进 " + customer.getFullName(), actor);
+        // Some callers persist their own record with JDBC immediately after this call and
+        // reference both the interaction and its reminder. Flush the complete timeline
+        // transaction so those foreign keys and reassignment updates observe the new rows.
+        entityManager.flush();
         audit.record(actor, "INTERACTION_CREATED", "INTERACTION", interaction.getId().toString(), "SUCCESS",
                 java.util.Map.of("customerId", customerId.toString()));
+        followUps.completeStaleReminders(actor.organizationId(), customerId);
+        followUps.reconcileCustomer(actor.organizationId(), customerId);
         return InteractionDtos.Response.from(interaction, actor.displayName());
     }
 
