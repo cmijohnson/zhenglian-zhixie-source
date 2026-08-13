@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.sql.DriverManager;
 
@@ -13,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers(disabledWithoutDocker = true)
 class FlywayPostgresIntegrationTest {
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+            DockerImageName.parse("pgvector/pgvector:pg18").asCompatibleSubstituteFor("postgres"))
             .withDatabaseName("yingge_test")
             .withUsername("yingge_test")
             .withPassword("test-password");
@@ -25,7 +27,7 @@ class FlywayPostgresIntegrationTest {
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
-        assertThat(result.migrationsExecuted).isEqualTo(23);
+        assertThat(result.migrationsExecuted).isEqualTo(27);
 
         try (var connection = DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
              var statement = connection.createStatement()) {
@@ -175,6 +177,27 @@ class FlywayPostgresIntegrationTest {
                     """)) {
                 assertThat(automaticReminderIndex.next()).isTrue();
                 assertThat(automaticReminderIndex.getInt(1)).isEqualTo(1);
+            }
+            try (var intelligenceTables = statement.executeQuery("""
+                    select count(*) from information_schema.tables where table_schema='public'
+                    and table_name in ('customer_intelligence_settings','customer_knowledge_chunks',
+                      'customer_analysis_jobs','customer_analysis_versions')
+                    """)) {
+                assertThat(intelligenceTables.next()).isTrue();
+                assertThat(intelligenceTables.getInt(1)).isEqualTo(4);
+            }
+            try (var vectorExtension = statement.executeQuery("""
+                    select count(*) from pg_extension where extname='vector'
+                    """)) {
+                assertThat(vectorExtension.next()).isTrue();
+                assertThat(vectorExtension.getInt(1)).isEqualTo(1);
+            }
+            try (var leadershipGrade = statement.executeQuery("""
+                    select count(*) from information_schema.columns
+                    where table_name='leadership_screen_settings' and column_name='featured_grade'
+                    """)) {
+                assertThat(leadershipGrade.next()).isTrue();
+                assertThat(leadershipGrade.getInt(1)).isEqualTo(1);
             }
             String organizationId = java.util.UUID.randomUUID().toString();
             statement.executeUpdate("""

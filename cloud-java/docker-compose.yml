@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18.4-alpine
+    image: pgvector/pgvector:pg18
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-yingge_cloud}
@@ -64,6 +64,28 @@ services:
     networks: [app, data]
     stop_grace_period: 45s
 
+  embedding:
+    image: ollama/ollama@sha256:1685741456770df6e3cceb2a945a5f75e020f658d1701509668d6f4688f1dd3f
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/usr/local/bin/yingge-embedding-entrypoint"]
+    environment:
+      OLLAMA_HOST: 0.0.0.0:8080
+      OLLAMA_MODELS: /data/models
+      OLLAMA_KEEP_ALIVE: 24h
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-bge-m3}
+    volumes:
+      - embedding_cache:/data
+      - ./deploy/scripts/embedding-entrypoint.sh:/usr/local/bin/yingge-embedding-entrypoint:ro
+    networks:
+      data: {}
+      model_egress:
+        gw_priority: 1
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/embedding-ready && ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 90
+
   gateway:
     build:
       context: ./frontend
@@ -102,7 +124,7 @@ services:
     networks: [data]
 
   backup:
-    image: postgres:18.4-alpine
+    image: pgvector/pgvector:pg18
     profiles: [tools]
     environment:
       PGHOST: postgres
@@ -124,3 +146,8 @@ networks:
     internal: false
   data:
     internal: true
+  model_egress:
+    internal: false
+
+volumes:
+  embedding_cache:

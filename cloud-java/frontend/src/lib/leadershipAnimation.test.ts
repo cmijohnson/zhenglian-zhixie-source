@@ -63,6 +63,10 @@ function dashboard(): LeadershipDashboardData {
     }],
     sources: [],
     displayMessages: [],
+    featuredGrade: '2026',
+    aClassStale: { enabled: true, thresholdHours: 72, customerCount: 1, unassignedCount: 0, owners: [{ membershipId: 'a', displayName: '甲', customerCount: 1 }], calculatedAt: '2026-07-26T02:00:00Z' },
+    schoolComparison: { featuredGrade: '2026', institutionA: 5, institutionB: 4, difference: 1, leader: 'INSTITUTION_A' },
+    tickerItems: [],
     screenSettings: { ...defaultLeadershipScreenSettings },
   }
 }

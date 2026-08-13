@@ -1,6 +1,7 @@
 package com.yingge.cloud;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yingge.cloud.intelligence.application.CustomerIntelligenceQueue;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -33,7 +35,8 @@ class ApplicationSecurityIntegrationTest {
     private static final String ADMIN_PASSWORD = "Integration-Test-Password-2026";
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+            DockerImageName.parse("pgvector/pgvector:pg18").asCompatibleSubstituteFor("postgres"))
             .withDatabaseName("yingge_app_test")
             .withUsername("yingge_test")
             .withPassword("test-password");
@@ -48,6 +51,7 @@ class ApplicationSecurityIntegrationTest {
         registry.add("app.bootstrap.admin-display-name", () -> "集成测试管理员");
         registry.add("app.content.campaign.start-date", () -> "2000-01-01");
         registry.add("app.content.campaign.end-date", () -> "2099-12-31");
+        registry.add("app.customer-intelligence.worker-initial-delay", () -> "3600000");
         registry.add("app.ai-admin.master-key", () -> java.util.Base64.getEncoder()
                 .encodeToString("0123456789abcdef0123456789abcdef".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
@@ -60,6 +64,9 @@ class ApplicationSecurityIntegrationTest {
 
     @Autowired
     JdbcTemplate jdbc;
+
+    @Autowired
+    CustomerIntelligenceQueue intelligenceQueue;
 
     @Test
     void sessionLoginCsrfAndCustomerValidationWorkTogether() throws Exception {
@@ -790,7 +797,8 @@ class ApplicationSecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.animationsEnabled").value(true))
                 .andExpect(jsonPath("$.idleTimeoutMinutes").value(20))
-                .andExpect(jsonPath("$.sceneOrder.length()").value(7))
+                .andExpect(jsonPath("$.sceneOrder.length()").value(9))
+                .andExpect(jsonPath("$.featuredGrade").value("2026"))
                 .andExpect(jsonPath("$.enabledEvents.length()").value(10))
                 .andExpect(jsonPath("$.version").value(0));
 
@@ -804,8 +812,9 @@ class ApplicationSecurityIntegrationTest {
                                   "sceneDurationSeconds": 15,
                                   "eventDurationSeconds": 8,
                                   "motionIntensity": "STRONG",
-                                  "sceneOrder": ["culture","time","briefing","trend","champions","funnel","mission"],
-                                  "enabledScenes": ["culture","time","briefing","trend","champions","funnel"],
+                                  "featuredGrade": "2027",
+                                  "sceneOrder": ["culture","time","briefing","trend","champions","funnel","mission","followUpRisk","schoolComparison"],
+                                  "enabledScenes": ["culture","time","briefing","trend","champions","funnel","followUpRisk","schoolComparison"],
                                   "enabledEvents": ["zeroBreakthrough","taskMilestone","rankingChange"],
                                   "expectedVersion": 0
                                 }
@@ -813,6 +822,7 @@ class ApplicationSecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.idleTimeoutMinutes").value(30))
                 .andExpect(jsonPath("$.motionIntensity").value("STRONG"))
+                .andExpect(jsonPath("$.featuredGrade").value("2027"))
                 .andExpect(jsonPath("$.sceneOrder[0]").value("culture"))
                 .andExpect(jsonPath("$.enabledEvents.length()").value(3))
                 .andExpect(jsonPath("$.version").value(1));
@@ -821,7 +831,12 @@ class ApplicationSecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.screenSettings.idleTimeoutMinutes").value(30))
                 .andExpect(jsonPath("$.screenSettings.motionIntensity").value("STRONG"))
-                .andExpect(jsonPath("$.screenSettings.version").value(1));
+                .andExpect(jsonPath("$.screenSettings.featuredGrade").value("2027"))
+                .andExpect(jsonPath("$.screenSettings.version").value(1))
+                .andExpect(jsonPath("$.featuredGrade").value("2027"))
+                .andExpect(jsonPath("$.aClassStale.thresholdHours").value(72))
+                .andExpect(jsonPath("$.schoolComparison.featuredGrade").value("2027"))
+                .andExpect(jsonPath("$.tickerItems.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
 
         mockMvc.perform(put("/api/v1/admin/leadership-screen-settings")
                         .cookie(adminCookie).with(csrf()).contentType("application/json")
@@ -833,7 +848,8 @@ class ApplicationSecurityIntegrationTest {
                                   "sceneDurationSeconds": 12,
                                   "eventDurationSeconds": 7,
                                   "motionIntensity": "CINEMATIC",
-                                  "sceneOrder": ["time","time","briefing","trend","champions","funnel","mission"],
+                                  "featuredGrade": "2027",
+                                  "sceneOrder": ["time","time","briefing","trend","champions","funnel","mission","followUpRisk","schoolComparison"],
                                   "enabledScenes": ["time"],
                                   "enabledEvents": [],
                                   "expectedVersion": 1
@@ -860,12 +876,110 @@ class ApplicationSecurityIntegrationTest {
                                   "sceneDurationSeconds": 12,
                                   "eventDurationSeconds": 7,
                                   "motionIntensity": "CINEMATIC",
-                                  "sceneOrder": ["time","culture","briefing","trend","champions","funnel","mission"],
+                                  "featuredGrade": "2027",
+                                  "sceneOrder": ["time","culture","briefing","trend","champions","funnel","mission","followUpRisk","schoolComparison"],
                                   "enabledScenes": ["time"],
                                   "enabledEvents": [],
                                   "expectedVersion": 1
                                 }
                                 """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void customerIntelligenceQueuesOneVersionedReadOnlyJobAndProtectsAdminSettings() throws Exception {
+        Cookie adminCookie = login();
+        var created = objectMapper.readTree(mockMvc.perform(post("/api/v1/customers")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content("""
+                                {
+                                  "fullName": "智能分析集成客户",
+                                  "phone": "18800008614",
+                                  "school": "院校甲",
+                                  "major": "计算机科学与技术",
+                                  "grade": "2027",
+                                  "demandSummary": "希望了解转专业规划",
+                                  "visibility": "PRIVATE"
+                                }
+                                """))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        String customerId = created.get("id").asText();
+
+        mockMvc.perform(get("/api/v1/customers/{id}/intelligence", customerId).cookie(adminCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(true))
+                .andExpect(jsonPath("$.processing").value(true))
+                .andExpect(jsonPath("$.processingStatus").value("PENDING"))
+                .andExpect(jsonPath("$.latest").value(org.hamcrest.Matchers.nullValue()));
+        mockMvc.perform(get("/api/v1/customers/{id}/intelligence/versions", customerId).cookie(adminCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(post("/api/v1/customers/{id}/intelligence/reanalyze", customerId)
+                        .cookie(adminCookie).with(csrf()))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.processingStatus").value("PENDING"));
+        assertThat(jdbc.queryForObject("""
+                select count(*) from customer_analysis_jobs
+                where customer_id=?::uuid and status in ('PENDING','RUNNING')
+                """, Integer.class, customerId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("""
+                select demand_summary from customers where id=?::uuid
+                """, String.class, customerId)).isEqualTo("希望了解转专业规划");
+
+        String activeJobId = jdbc.queryForObject("""
+                select id::text from customer_analysis_jobs
+                where customer_id=?::uuid and status='PENDING'
+                """, String.class, customerId);
+        jdbc.update("""
+                update customer_analysis_jobs
+                set status='RUNNING', attempts=2, rerun_requested=true, locked_at=now()
+                where id=?::uuid
+                """, activeJobId);
+        intelligenceQueue.succeed(java.util.UUID.fromString(activeJobId));
+        assertThat(jdbc.queryForObject("""
+                select attempts from customer_analysis_jobs where id=?::uuid
+                """, Integer.class, activeJobId)).isZero();
+        assertThat(jdbc.queryForObject("""
+                select status from customer_analysis_jobs where id=?::uuid
+                """, String.class, activeJobId)).isEqualTo("PENDING");
+
+        mockMvc.perform(get("/api/v1/admin/customer-intelligence/settings").cookie(adminCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.embeddingModel").value("bge-m3"))
+                .andExpect(jsonPath("$.nightlyRatePerMinute").value(10))
+                .andExpect(jsonPath("$.pendingJobs").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
+        mockMvc.perform(put("/api/v1/admin/customer-intelligence/settings")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content("""
+                                {
+                                  "enabled": true,
+                                  "autoProfileAnalysis": true,
+                                  "autoTimelineAnalysis": true,
+                                  "embeddingBaseUrl": "file:///etc/passwd",
+                                  "embeddingModel": "bge-m3",
+                                  "recentInteractionLimit": 10,
+                                  "semanticChunkLimit": 12,
+                                  "backfillEnabled": true,
+                                  "backfillPaused": false,
+                                  "nightlyRatePerMinute": 10,
+                                  "expectedVersion": 0
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("EMBEDDING_BASE_URL_INVALID"));
+
+        mockMvc.perform(get("/api/v1/customers/{id}/intelligence", java.util.UUID.randomUUID())
+                        .cookie(adminCookie))
+                .andExpect(status().isNotFound());
+
+        String teamId = objectMapper.readTree(mockMvc.perform(post("/api/v1/admin/teams")
+                        .cookie(adminCookie).with(csrf()).contentType("application/json")
+                        .content("{\"name\":\"智能分析权限团队\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asText();
+        createMember(adminCookie, "intelligence-member", "智能分析普通成员", teamId);
+        Cookie memberCookie = login("intelligence-member", "1");
+        mockMvc.perform(get("/api/v1/admin/customer-intelligence/settings").cookie(memberCookie))
                 .andExpect(status().isForbidden());
     }
 

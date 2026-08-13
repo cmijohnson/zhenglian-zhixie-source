@@ -23,6 +23,7 @@ public final class LeadershipScreenSettingsDtos {
             List<String> sceneOrder,
             List<String> enabledScenes,
             List<String> enabledEvents,
+            String featuredGrade,
             Instant updatedAt,
             long version
     ) {}
@@ -34,9 +35,10 @@ public final class LeadershipScreenSettingsDtos {
             @Min(5) @Max(60) int sceneDurationSeconds,
             @Min(3) @Max(15) int eventDurationSeconds,
             @NotBlank String motionIntensity,
-            @NotNull @Size(min = 7, max = 7) List<String> sceneOrder,
+            @NotNull @Size(min = 9, max = 9) List<String> sceneOrder,
             @NotEmpty List<String> enabledScenes,
             @NotNull List<String> enabledEvents,
+            @NotBlank String featuredGrade,
             Long expectedVersion
     ) {}
 }

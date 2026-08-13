@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
@@ -64,7 +65,8 @@ class ComprehensiveMockDataIntegrationTest {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+            DockerImageName.parse("pgvector/pgvector:pg18").asCompatibleSubstituteFor("postgres"))
             .withDatabaseName("yingge_full_suite")
             .withUsername("yingge_full_test")
             .withPassword("full-test-password");
@@ -74,6 +76,7 @@ class ComprehensiveMockDataIntegrationTest {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("app.customer-intelligence.worker-initial-delay", () -> "3600000");
         registry.add("app.bootstrap.admin-username", () -> "full-admin");
         registry.add("app.bootstrap.admin-password", () -> ADMIN_PASSWORD);
         registry.add("app.bootstrap.admin-display-name", () -> "全量测试管理员");
@@ -660,8 +663,12 @@ class ComprehensiveMockDataIntegrationTest {
                 .andExpect(jsonPath("$.rankings[0].todayCustomers").isNumber())
                 .andExpect(jsonPath("$.sources").isArray())
                 .andExpect(jsonPath("$.displayMessages").isArray())
+                .andExpect(jsonPath("$.tickerItems.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)))
+                .andExpect(jsonPath("$.featuredGrade").value("2026"))
+                .andExpect(jsonPath("$.aClassStale.thresholdHours").value(72))
+                .andExpect(jsonPath("$.schoolComparison.featuredGrade").value("2026"))
                 .andExpect(jsonPath("$.screenSettings.idleTimeoutMinutes").value(20))
-                .andExpect(jsonPath("$.screenSettings.sceneOrder.length()").value(7))
+                .andExpect(jsonPath("$.screenSettings.sceneOrder.length()").value(9))
                 .andReturn());
         long expectedGrade26RankingCustomers = jdbc.queryForObject("""
                 select count(*) from customers customer

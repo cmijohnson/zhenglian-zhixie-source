@@ -16,6 +16,8 @@ const sceneMeta: Record<LeadershipSceneId, { name: string; description: string }
   champions: { name: '榜首光柱', description: '五维排行榜冠军舞台' },
   funnel: { name: '转化能量流', description: '客户到筛选的全链路转化' },
   mission: { name: '任务与公告', description: '完成率、重点任务与通知' },
+  followUpRisk: { name: 'A 类跟进风险', description: '超时客户数与归属人动态分布' },
+  schoolComparison: { name: '核心院校对比', description: '重点年级院校甲与院校乙对比' },
 }
 const eventMeta: Record<LeadershipEventType, { name: string; description: string }> = {
   zeroBreakthrough: { name: '破零时刻', description: '关键指标从 0 变为正数' },
@@ -41,6 +43,7 @@ const form = reactive({
   sceneOrder: [] as LeadershipSceneId[],
   enabledScenes: [] as LeadershipSceneId[],
   enabledEvents: [] as LeadershipEventType[],
+  featuredGrade: '2026',
 })
 const busy = ref(false)
 const error = ref('')
@@ -60,6 +63,7 @@ function apply(value: LeadershipScreenSettings) {
   form.sceneOrder = [...value.sceneOrder]
   form.enabledScenes = [...value.enabledScenes]
   form.enabledEvents = [...value.enabledEvents]
+  form.featuredGrade = value.featuredGrade
 }
 
 async function load() {
@@ -93,6 +97,7 @@ async function save() {
         sceneOrder: form.sceneOrder,
         enabledScenes: form.enabledScenes,
         enabledEvents: form.enabledEvents,
+        featuredGrade: form.featuredGrade,
         expectedVersion: settings.value.version,
       }),
     }))
@@ -177,12 +182,15 @@ onMounted(load)
               <option value="STRONG">强烈 · 展厅模式</option>
             </select>
           </label>
+          <label>重点年级
+            <span><input v-model="form.featuredGrade" type="text" inputmode="numeric" pattern="(19|20)[0-9]{2}" maxlength="4" required> 级</span>
+          </label>
         </div>
       </section>
 
       <div class="leadership-settings-columns">
         <section class="panel scene-settings-card">
-          <header><div><p class="eyebrow">STANDBY PLAYLIST</p><h2>待机轮播场景</h2></div><span>{{ form.enabledScenes.length }} / 7 已启用</span></header>
+          <header><div><p class="eyebrow">STANDBY PLAYLIST</p><h2>待机轮播场景</h2></div><span>{{ form.enabledScenes.length }} / {{ form.sceneOrder.length }} 已启用</span></header>
           <p class="muted">上下调整实际播放顺序；关闭无业务数据的场景时，大屏会自动轮播剩余项目。</p>
           <div class="scene-order-list">
             <article v-for="(scene, index) in form.sceneOrder" :key="scene" :class="{ disabled: !enabledSceneSet.has(scene) }">

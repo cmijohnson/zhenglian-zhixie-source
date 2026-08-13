@@ -68,18 +68,22 @@ public class LeadershipDashboardService {
         List<UUID> memberIds = requestedMembershipId == null
                 ? members.stream().map(LeadershipDashboardDtos.MemberOption::membershipId).toList()
                 : List.of(requestedMembershipId);
+        var settings = screenSettings.effective(actor.organizationId());
         Scope scope = new Scope(actor, requestedTeamId, requestedMembershipId, allowedTeamIds,
-                memberIds, startDate, endDate);
+                memberIds, startDate, endDate, settings.featuredGrade());
 
         LeadershipDashboardDtos.Headline headline = headline(scope);
+        var stale = aClassStale(scope);
+        var schoolComparison = schoolComparison(scope);
+        var messages = displayMessages(scope);
         return new LeadershipDashboardDtos.Overview(
                 Instant.now(), lastBusinessActivityAt(scope), startDate, endDate, days, actor.isAdmin(),
                 requestedTeamId, requestedMembershipId, teams, members,
                 headline, recentCustomerActivities(scope), rankings(scope), dailyConversions(scope),
                 customerQuality(scope, headline.totalCustomers()),
                 taskSummary(scope), taskProgress(scope), taskPublications(scope),
-                sourceBreakdown(scope), displayMessages(scope),
-                screenSettings.effective(actor.organizationId())
+                sourceBreakdown(scope), messages, settings.featuredGrade(), stale, schoolComparison,
+                tickerItems(stale, schoolComparison, messages), settings
         );
     }
 
@@ -257,7 +261,9 @@ public class LeadershipDashboardService {
         MapSqlParameterSource params = baseParams(scope)
                 .addValue("rankingDate", scope.endDate())
                 .addValue("qualityCategory", CustomerQuality.CATEGORY)
-                .addValue("qualityALabel", CustomerQuality.LEVELS.getFirst().label());
+                .addValue("qualityALabel", CustomerQuality.LEVELS.getFirst().label())
+                .addValue("featuredGrade", scope.featuredGrade())
+                .addValue("featuredGradeShort", scope.featuredGrade().substring(2));
         return jdbc.query("""
                 select membership.id membership_id, account.display_name,
                        coalesce(string_agg(distinct team.name, ' / ' order by team.name), '') team_names,
@@ -293,7 +299,7 @@ public class LeadershipDashboardService {
                     and customer.organization_id=membership.organization_id
                     and customer.archived_at is null
                     and regexp_replace(coalesce(customer.grade, ''), '[^0-9]', '', 'g')
-                        in ('26', '2026')
+                        in (:featuredGradeShort, :featuredGrade)
                 left join work_task_assignments assignment on assignment.membership_id=membership.id
                     and assignment.organization_id=membership.organization_id
                 where membership.organization_id=:organizationId
@@ -529,6 +535,128 @@ public class LeadershipDashboardService {
                 classified, Math.max(0, totalCustomers - classified), levels);
     }
 
+    private LeadershipDashboardDtos.AClassStaleSummary aClassStale(Scope scope) {
+        FollowUpPolicy policy = jdbc.query("""
+                select a_class_stale_enabled, stale_after_hours
+                from organization_follow_up_policies
+                where organization_id=:organizationId
+                """, baseParams(scope), (row, index) -> new FollowUpPolicy(
+                row.getBoolean("a_class_stale_enabled"), row.getInt("stale_after_hours")))
+                .stream().findFirst().orElse(new FollowUpPolicy(true, 72));
+        Instant calculatedAt = Instant.now();
+        if (!policy.enabled()) {
+            return new LeadershipDashboardDtos.AClassStaleSummary(
+                    false, policy.thresholdHours(), 0, 0, List.of(), calculatedAt);
+        }
+
+        MapSqlParameterSource params = customerParams(scope)
+                .addValue("qualityCategory", CustomerQuality.CATEGORY)
+                .addValue("qualityALabel", CustomerQuality.LEVELS.getFirst().label())
+                .addValue("staleHours", policy.thresholdHours());
+        List<StaleOwnerCount> counts = jdbc.query("""
+                select case
+                         when owner_membership.status='ACTIVE' and owner_account.enabled=true
+                         then c.owner_membership_id else null
+                       end membership_id,
+                       case
+                         when owner_membership.status='ACTIVE' and owner_account.enabled=true
+                         then owner_account.display_name else '未分配/已停用'
+                       end display_name,
+                       count(distinct c.id) customer_count
+                from customers c
+                left join memberships owner_membership on owner_membership.id=c.owner_membership_id
+                left join user_accounts owner_account on owner_account.id=owner_membership.user_id
+                where
+                """ + customerWhere(scope) + """
+
+                  and coalesce(c.last_contact_at, c.created_at)
+                      < now() - make_interval(hours => :staleHours)
+                  and exists (
+                    select 1
+                    from customer_tags stale_customer_tag
+                    join tags stale_tag on stale_tag.id=stale_customer_tag.tag_id
+                    where stale_customer_tag.customer_id=c.id
+                      and stale_tag.organization_id=c.organization_id
+                      and stale_tag.active=true
+                      and stale_tag.category=:qualityCategory
+                      and stale_tag.name=:qualityALabel
+                  )
+                group by 1, 2
+                order by customer_count desc, display_name
+                """, params, (row, index) -> new StaleOwnerCount(
+                row.getObject("membership_id", UUID.class), row.getString("display_name"),
+                row.getLong("customer_count")));
+        long total = counts.stream().mapToLong(StaleOwnerCount::customerCount).sum();
+        long unassigned = counts.stream().filter(item -> item.membershipId() == null)
+                .mapToLong(StaleOwnerCount::customerCount).sum();
+        List<LeadershipDashboardDtos.StaleOwner> owners = counts.stream()
+                .filter(item -> item.membershipId() != null)
+                .map(item -> new LeadershipDashboardDtos.StaleOwner(
+                        item.membershipId(), item.displayName(), item.customerCount()))
+                .toList();
+        return new LeadershipDashboardDtos.AClassStaleSummary(
+                true, policy.thresholdHours(), total, unassigned, owners, calculatedAt);
+    }
+
+    private LeadershipDashboardDtos.SchoolComparison schoolComparison(Scope scope) {
+        MapSqlParameterSource params = customerParams(scope)
+                .addValue("featuredGrade", scope.featuredGrade())
+                .addValue("featuredGradeShort", scope.featuredGrade().substring(2));
+        long[] values = jdbc.queryForObject("""
+                select count(*) filter (where btrim(c.school)='院校甲') jsu_count,
+                       count(*) filter (where btrim(c.school)='院校乙') jsust_count
+                from customers c
+                where
+                """ + customerWhere(scope) + """
+
+                  and regexp_replace(coalesce(c.grade, ''), '[^0-9]', '', 'g')
+                      in (:featuredGradeShort, :featuredGrade)
+                """, params, (row, index) -> new long[]{
+                row.getLong("jsu_count"), row.getLong("jsust_count")});
+        long jsu = values == null ? 0 : values[0];
+        long jsust = values == null ? 0 : values[1];
+        String leader = jsu == jsust ? "TIED" : (jsu > jsust ? "INSTITUTION_A" : "INSTITUTION_B");
+        return new LeadershipDashboardDtos.SchoolComparison(
+                scope.featuredGrade(), jsu, jsust, Math.abs(jsu - jsust), leader);
+    }
+
+    private List<LeadershipDashboardDtos.TickerItem> tickerItems(
+            LeadershipDashboardDtos.AClassStaleSummary stale,
+            LeadershipDashboardDtos.SchoolComparison school,
+            List<LeadershipDashboardDtos.DisplayMessage> messages) {
+        List<LeadershipDashboardDtos.TickerItem> items = new ArrayList<>();
+        if (stale.enabled()) {
+            String ownerText = stale.owners().isEmpty() ? "暂无在职归属人"
+                    : stale.owners().stream().limit(5)
+                    .map(owner -> owner.displayName() + " " + owner.customerCount() + " 人")
+                    .collect(Collectors.joining("、"));
+            String threshold = stale.thresholdHours() % 24 == 0
+                    ? stale.thresholdHours() / 24 + " 天" : stale.thresholdHours() + " 小时";
+            items.add(new LeadershipDashboardDtos.TickerItem(
+                    "a-class-stale", "FOLLOW_UP_RISK",
+                    stale.customerCount() > 0 ? "URGENT" : "NORMAL",
+                    "A 类客户超过 " + threshold + " 未有效更新："
+                            + stale.customerCount() + " 人；归属：" + ownerText
+                            + (stale.unassignedCount() > 0 ? "；未分配/已停用 " + stale.unassignedCount() + " 人" : "")));
+        } else {
+            items.add(new LeadershipDashboardDtos.TickerItem(
+                    "a-class-stale-disabled", "FOLLOW_UP_RISK", "NORMAL",
+                    "A 类客户超时跟进统计已由管理员关闭"));
+        }
+        String comparison = school.leader().equals("TIED") ? "两校数量持平"
+                : (school.leader().equals("INSTITUTION_A") ? "院校甲领先 " : "院校乙领先 ")
+                + school.difference() + " 人";
+        items.add(new LeadershipDashboardDtos.TickerItem(
+                "featured-school-comparison", "SCHOOL_COMPARISON", "IMPORTANT",
+                school.featuredGrade() + " 级客户：院校甲 " + school.institutionA()
+                        + " 人，院校乙 " + school.institutionB()
+                        + " 人，" + comparison));
+        messages.forEach(message -> items.add(new LeadershipDashboardDtos.TickerItem(
+                "announcement-" + message.id(), "ANNOUNCEMENT", message.priority(),
+                message.title() + "：" + message.content())));
+        return List.copyOf(items);
+    }
+
     private String customerWhere(Scope scope) {
         List<String> conditions = new ArrayList<>();
         conditions.add("c.organization_id=:organizationId");
@@ -581,8 +709,13 @@ public class LeadershipDashboardService {
             Set<UUID> allowedTeamIds,
             List<UUID> memberIds,
             LocalDate startDate,
-            LocalDate endDate
+            LocalDate endDate,
+            String featuredGrade
     ) {}
+
+    private record FollowUpPolicy(boolean enabled, int thresholdHours) {}
+
+    private record StaleOwnerCount(UUID membershipId, String displayName, long customerCount) {}
 
     private record SourceCount(
             String source,

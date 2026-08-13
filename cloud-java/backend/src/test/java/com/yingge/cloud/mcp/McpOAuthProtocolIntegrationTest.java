@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -44,7 +45,8 @@ class McpOAuthProtocolIntegrationTest {
     private static final String RESOURCE = "http://localhost/mcp";
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+            DockerImageName.parse("pgvector/pgvector:pg18").asCompatibleSubstituteFor("postgres"))
             .withDatabaseName("yingge_mcp_test").withUsername("yingge_test").withPassword("test-password");
 
     @DynamicPropertySource

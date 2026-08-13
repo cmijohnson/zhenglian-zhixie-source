@@ -126,6 +126,36 @@ public final class LeadershipDashboardDtos {
             Instant publishedAt
     ) {}
 
+    public record StaleOwner(
+            UUID membershipId,
+            String displayName,
+            long customerCount
+    ) {}
+
+    public record AClassStaleSummary(
+            boolean enabled,
+            int thresholdHours,
+            long customerCount,
+            long unassignedCount,
+            List<StaleOwner> owners,
+            Instant calculatedAt
+    ) {}
+
+    public record SchoolComparison(
+            String featuredGrade,
+            long institutionA,
+            long institutionB,
+            long difference,
+            String leader
+    ) {}
+
+    public record TickerItem(
+            String id,
+            String type,
+            String priority,
+            String text
+    ) {}
+
     public record Overview(
             Instant generatedAt,
             Instant lastBusinessActivityAt,
@@ -147,6 +177,10 @@ public final class LeadershipDashboardDtos {
             List<TaskPublication> recentTaskPublications,
             List<SourceSlice> sources,
             List<DisplayMessage> displayMessages,
+            String featuredGrade,
+            AClassStaleSummary aClassStale,
+            SchoolComparison schoolComparison,
+            List<TickerItem> tickerItems,
             LeadershipScreenSettingsDtos.Settings screenSettings
     ) {}
 }

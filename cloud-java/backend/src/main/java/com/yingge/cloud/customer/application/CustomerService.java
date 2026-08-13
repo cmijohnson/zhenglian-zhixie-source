@@ -12,6 +12,7 @@ import com.yingge.cloud.customer.infrastructure.CustomerEntity;
 import com.yingge.cloud.customer.infrastructure.CustomerRepository;
 import com.yingge.cloud.customer.infrastructure.CustomerSpecifications;
 import com.yingge.cloud.followup.application.CustomerFollowUpService;
+import com.yingge.cloud.intelligence.application.CustomerIntelligenceQueue;
 import com.yingge.cloud.permission.application.PermissionService;
 import com.yingge.cloud.permission.domain.CurrentActor;
 import com.yingge.cloud.reminder.application.ReminderPort;
@@ -53,12 +54,14 @@ public class CustomerService {
     private final EntityManager entityManager;
     private final NamedParameterJdbcTemplate jdbc;
     private final CustomerFollowUpService followUps;
+    private final CustomerIntelligenceQueue intelligenceQueue;
 
     public CustomerService(CustomerRepository customers, CustomerAccessGrantRepository grants, TagRepository tags,
                            DictionaryItemRepository dictionaries, CurrentActorProvider actors,
                            PermissionService permissions, ReminderPort reminders, AuditService audit,
                            EntityManager entityManager, NamedParameterJdbcTemplate jdbc,
-                           CustomerFollowUpService followUps) {
+                           CustomerFollowUpService followUps,
+                           CustomerIntelligenceQueue intelligenceQueue) {
         this.customers = customers;
         this.grants = grants;
         this.tags = tags;
@@ -70,6 +73,7 @@ public class CustomerService {
         this.entityManager = entityManager;
         this.jdbc = jdbc;
         this.followUps = followUps;
+        this.intelligenceQueue = intelligenceQueue;
     }
 
     @Transactional(readOnly = true)
@@ -252,6 +256,8 @@ public class CustomerService {
                         ? java.util.Map.of("duplicateOverrideReason", body.duplicateOverrideReason())
                         : null);
         followUps.reconcileCustomer(actor.organizationId(), saved.getId());
+        intelligenceQueue.enqueue(actor.organizationId(), saved.getId(),
+                CustomerIntelligenceQueue.TriggerType.CUSTOMER_CREATED, actor.membershipId());
         return CustomerDtos.Response.from(saved);
     }
 
@@ -287,6 +293,8 @@ public class CustomerService {
                         ? java.util.Map.of("duplicateOverrideReason", body.duplicateOverrideReason())
                         : null);
         followUps.reconcileCustomer(actor.organizationId(), customer.getId());
+        intelligenceQueue.enqueue(actor.organizationId(), customer.getId(),
+                CustomerIntelligenceQueue.TriggerType.PROFILE_UPDATED, actor.membershipId());
         return CustomerDtos.Response.from(customer);
     }
 

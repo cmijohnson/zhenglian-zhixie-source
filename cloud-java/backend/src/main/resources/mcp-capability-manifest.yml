@@ -45,6 +45,13 @@ operations:
   - { operation: CustomerController#transferOwnership, classification: TOOL, capability: yingge_customer_transfer }
   - { operation: CustomerController#archive, classification: TOOL, capability: yingge_customer_archive }
   - { operation: CustomerController#reviewLead, classification: TOOL, capability: yingge_customer_lead_review }
+  - { operation: CustomerIntelligenceController#overview, classification: TOOL, capability: yingge_customer_intelligence_get }
+  - { operation: CustomerIntelligenceController#versions, classification: TOOL, capability: yingge_customer_intelligence_versions }
+  - { operation: CustomerIntelligenceController#reanalyze, classification: TOOL, capability: yingge_customer_intelligence_reanalyze }
+  - { operation: AdminCustomerIntelligenceController#settings, classification: TOOL, capability: yingge_admin_customer_intelligence_settings_get }
+  - { operation: AdminCustomerIntelligenceController#update, classification: TOOL, capability: yingge_admin_customer_intelligence_settings_update }
+  - { operation: AdminCustomerIntelligenceController#resumeBackfill, classification: TOOL, capability: yingge_admin_customer_intelligence_backfill_resume }
+  - { operation: AdminCustomerIntelligenceController#pauseBackfill, classification: TOOL, capability: yingge_admin_customer_intelligence_backfill_pause }
   - { operation: DashboardController#dashboard, classification: TOOL, capability: yingge_dashboard_get }
   - { operation: ExportController#customers, classification: DEFERRED_FILES, capability: csv-export }
   - { operation: ExportController#timeline, classification: DEFERRED_FILES, capability: customer-timeline-csv }

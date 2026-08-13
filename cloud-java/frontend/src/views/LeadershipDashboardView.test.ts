@@ -106,6 +106,21 @@ const dashboard = {
     qualifiedRate: 0.5806,
   }],
   displayMessages: [],
+  featuredGrade: '2026',
+  aClassStale: {
+    enabled: true, thresholdHours: 72, customerCount: 3, unassignedCount: 0,
+    owners: [{ membershipId: 'member-1', displayName: '成员甲', customerCount: 3 }],
+    calculatedAt: '2026-07-25T05:30:00Z',
+  },
+  schoolComparison: {
+    featuredGrade: '2026', institutionA: 70,
+    institutionB: 58, difference: 12,
+    leader: 'INSTITUTION_A',
+  },
+  tickerItems: [
+    { id: 'a-class-stale', type: 'FOLLOW_UP_RISK', priority: 'URGENT', text: 'A 类客户超过 3 天未有效更新：3 人' },
+    { id: 'featured-school-comparison', type: 'SCHOOL_COMPARISON', priority: 'IMPORTANT', text: '2026 级客户：院校甲 70 人，院校乙 58 人' },
+  ],
   screenSettings: {
     animationsEnabled: true,
     standbyEnabled: true,
@@ -113,13 +128,14 @@ const dashboard = {
     sceneDurationSeconds: 12,
     eventDurationSeconds: 7,
     motionIntensity: 'CINEMATIC',
-    sceneOrder: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission'],
-    enabledScenes: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission'],
+    sceneOrder: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission', 'followUpRisk', 'schoolComparison'],
+    enabledScenes: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission', 'followUpRisk', 'schoolComparison'],
     enabledEvents: [
       'zeroBreakthrough', 'customerAdded', 'customerUpdated',
       'milestone', 'trendSurge', 'conversionStage',
       'taskPublished', 'taskMilestone', 'rankingChange', 'teamMomentum',
     ],
+    featuredGrade: '2026',
     version: 0,
   },
 }
@@ -158,7 +174,9 @@ describe('leadership dashboard', () => {
     expect(wrapper.text()).not.toContain('A类客户日排行榜')
     expect(wrapper.text()).not.toContain('添加好友排行榜')
     expect(wrapper.text()).not.toContain('筛选好友排行榜')
-    expect(wrapper.text()).toContain('仅统计 2026 / 26级')
+    expect(wrapper.text()).toContain('仅统计 2026 级')
+    expect(wrapper.find('[data-testid="leadership-ticker"]').text()).toContain('A 类客户超过 3 天')
+    expect(wrapper.find('[data-testid="leadership-ticker"]').text()).toContain('院校甲 70 人')
     expect(wrapper.text()).toContain('统计当前全部任务')
     expect(wrapper.text()).toContain('每日好友转化 K 线')
     expect(wrapper.text()).toContain('客户质量分层')

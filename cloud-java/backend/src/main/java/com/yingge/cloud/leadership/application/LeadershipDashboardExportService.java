@@ -163,7 +163,8 @@ public class LeadershipDashboardExportService {
             sheet.getRow(sourceRow - 1).getCell(6).setCellStyle(styles.percent());
         }
 
-        row(sheet, 13, 9, styles.section(), "26级个人筛选榜 TOP 5", "筛选客户数", "任务完成率");
+        row(sheet, 13, 9, styles.section(), overview.featuredGrade() + " 级个人筛选榜 TOP 5",
+                "筛选客户数", "任务完成率");
         int rankingRow = 14;
         for (var member : overview.rankings().stream()
                 .sorted(Comparator.comparingLong(
@@ -223,9 +224,10 @@ public class LeadershipDashboardExportService {
             Styles styles) {
         sheet.setDisplayGridlines(false);
         sheet.createFreezePane(3, 2);
-        title(sheet, "A1:M1", "个人客户与任务排行榜（客户仅统计2026/26级）", styles);
-        row(sheet, 1, styles.header(), "排名", "成员", "所属团队", "26级总客户", "26级添加好友",
-                "26级信任好友", "26级筛选好友", "分配任务", "完成任务", "任务完成率",
+        String gradeLabel = overview.featuredGrade() + " 级";
+        title(sheet, "A1:M1", "个人客户与任务排行榜（客户仅统计" + gradeLabel + "）", styles);
+        row(sheet, 1, styles.header(), "排名", "成员", "所属团队", gradeLabel + "总客户", gradeLabel + "添加好友",
+                gradeLabel + "信任好友", gradeLabel + "筛选好友", "分配任务", "完成任务", "任务完成率",
                 "添加率", "信任率", "筛选率");
         var rankings = overview.rankings().stream()
                 .sorted(Comparator.comparingLong(

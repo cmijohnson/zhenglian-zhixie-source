@@ -61,6 +61,23 @@ const funnel = computed(() => [
   { label: '信任', value: props.data.headline.trustedFriendCustomers, tone: 'purple' },
   { label: '筛选', value: props.data.headline.qualifiedFriendCustomers, tone: 'gold' },
 ])
+const stale = computed(() => props.data.aClassStale ?? {
+  enabled: true,
+  thresholdHours: 72,
+  customerCount: 0,
+  unassignedCount: 0,
+  owners: [],
+})
+const schoolComparison = computed(() => props.data.schoolComparison ?? {
+  featuredGrade: props.data.featuredGrade ?? '2026',
+  institutionA: 0,
+  institutionB: 0,
+  difference: 0,
+  leader: 'TIED',
+})
+const staleThreshold = computed(() => stale.value.thresholdHours % 24 === 0
+  ? `${stale.value.thresholdHours / 24} 天`
+  : `${stale.value.thresholdHours} 小时`)
 function eventDueLabel(value: string) {
   return new Intl.DateTimeFormat('zh-CN', {
     month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
@@ -202,6 +219,34 @@ function eventDueLabel(value: string) {
                 <p>{{ selectedMessage?.content }}</p>
                 <span v-if="data.tasks[0]">最近任务 · {{ data.tasks[0].title }}</span>
               </div>
+            </div>
+          </template>
+
+          <template v-else-if="sceneId === 'followUpRisk'">
+            <small>A-CLASS FOLLOW-UP RADAR</small><h2>A 类客户跟进风险</h2>
+            <div class="follow-up-risk-scene" :class="{ clear: stale.customerCount === 0 }">
+              <div class="risk-orbit"><i></i><i></i><strong>{{ stale.customerCount }}</strong><span>超过 {{ staleThreshold }} 未更新</span></div>
+              <div class="risk-owner-list">
+                <article v-for="owner in stale.owners.slice(0, 6)" :key="owner.membershipId">
+                  <span>{{ owner.displayName }}</span><b>{{ owner.customerCount }}</b><i :style="{ width: `${Math.max(8, owner.customerCount / Math.max(1, stale.customerCount) * 100)}%` }"></i>
+                </article>
+                <article v-if="stale.unassignedCount"><span>未分配 / 已停用</span><b>{{ stale.unassignedCount }}</b><i :style="{ width: `${Math.max(8, stale.unassignedCount / Math.max(1, stale.customerCount) * 100)}%` }"></i></article>
+                <p v-if="!stale.enabled">该提醒策略已由管理员关闭</p>
+                <p v-else-if="stale.customerCount === 0">当前范围内没有超时的 A 类客户</p>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="sceneId === 'schoolComparison'">
+            <small>FEATURED COHORT COMPARISON</small><h2>{{ schoolComparison.featuredGrade }} 级核心院校客户</h2>
+            <div class="school-comparison-scene">
+              <article class="school-a">
+                <span>INSTITUTION A</span><h3>院校甲</h3><strong>{{ schoolComparison.institutionA }}</strong><small>人</small>
+              </article>
+              <div class="school-comparison-gap"><i></i><b>VS</b><strong>{{ schoolComparison.difference }}</strong><span>相差人数</span></div>
+              <article class="school-b">
+                <span>INSTITUTION B</span><h3>院校乙</h3><strong>{{ schoolComparison.institutionB }}</strong><small>人</small>
+              </article>
             </div>
           </template>
         </section>

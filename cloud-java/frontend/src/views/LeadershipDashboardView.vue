@@ -53,14 +53,17 @@ let clockTimer: number | undefined
 let refreshTimer: number | undefined
 let sceneTimer: number | undefined
 let eventTimer: number | undefined
+const refreshIntervalMs = 10_000
 
-const rankDefinitions: Omit<RankBoard, 'rows' | 'total' | 'participants' | 'average'>[] = [
-  { key: 'total', label: '总添加客户排行榜', english: 'TOTAL CUSTOMERS ADDED', tone: 'cyan', scope: '仅统计 2026 / 26级', unit: '人' },
-  { key: 'todayTotal', label: '总添加客户日排行榜', english: 'DAILY CUSTOMERS ADDED', tone: 'gold', scope: '今日新增 · 2026 / 26级', unit: '人' },
-  { key: 'trusted', label: '信任好友排行榜', english: 'TRUST ESTABLISHED', tone: 'purple', scope: '仅统计 2026 / 26级', unit: '人' },
-  { key: 'qualityA', label: 'A类客户排行榜', english: 'QUALITY A CUSTOMERS', tone: 'blue', scope: '仅统计 2026 / 26级', unit: '人' },
+const screenSettings = computed(() => data.value?.screenSettings ?? defaultLeadershipScreenSettings)
+const featuredGrade = computed(() => data.value?.featuredGrade ?? screenSettings.value.featuredGrade ?? '2026')
+const rankDefinitions = computed<Omit<RankBoard, 'rows' | 'total' | 'participants' | 'average'>[]>(() => [
+  { key: 'total', label: '总添加客户排行榜', english: 'TOTAL CUSTOMERS ADDED', tone: 'cyan', scope: `仅统计 ${featuredGrade.value} 级`, unit: '人' },
+  { key: 'todayTotal', label: '总添加客户日排行榜', english: 'DAILY CUSTOMERS ADDED', tone: 'gold', scope: `今日新增 · ${featuredGrade.value} 级`, unit: '人' },
+  { key: 'trusted', label: '信任好友排行榜', english: 'TRUST ESTABLISHED', tone: 'purple', scope: `仅统计 ${featuredGrade.value} 级`, unit: '人' },
+  { key: 'qualityA', label: 'A类客户排行榜', english: 'QUALITY A CUSTOMERS', tone: 'blue', scope: `仅统计 ${featuredGrade.value} 级`, unit: '人' },
   { key: 'task', label: '任务完成排行榜', english: 'TASK COMPLETION', tone: 'green', scope: '统计当前全部任务', unit: '项' },
-]
+])
 
 const rankValue = (row: MemberRanking, metric: RankMetric) => {
   if (metric === 'qualityA') return row.qualityACustomers ?? 0
@@ -70,7 +73,7 @@ const rankValue = (row: MemberRanking, metric: RankMetric) => {
   return row.totalCustomers
 }
 
-const rankBoards = computed<RankBoard[]>(() => rankDefinitions.map((definition) => {
+const rankBoards = computed<RankBoard[]>(() => rankDefinitions.value.map((definition) => {
   const rows = [...(data.value?.rankings ?? [])].sort((left, right) =>
     rankValue(right, definition.key) - rankValue(left, definition.key)
       || (right.qualityACustomers ?? 0) - (left.qualityACustomers ?? 0)
@@ -104,7 +107,6 @@ const taskRingStyle = computed(() => ({
 }))
 const maxSource = computed(() => Math.max(1, ...(data.value?.sources.map((item) => item.customerCount) ?? [1])))
 const topSources = computed(() => (data.value?.sources ?? []).slice(0, 8))
-const screenSettings = computed(() => data.value?.screenSettings ?? defaultLeadershipScreenSettings)
 const activeScenes = computed(() => screenSettings.value.sceneOrder
   .filter((scene) => screenSettings.value.enabledScenes.includes(scene)))
 const scenePosition = computed(() => activeScenes.value.length ? sceneIndex.value % activeScenes.value.length : 0)
@@ -225,6 +227,7 @@ async function load(compare = true) {
   try {
     const next = await api<LeadershipDashboardData>(`/api/v1/leadership-dashboard?${params}`)
     next.displayMessages ??= []
+    next.tickerItems ??= []
     next.recentCustomerActivities ??= []
     next.recentTaskPublications ??= []
     next.customerQuality ??= {
@@ -232,7 +235,15 @@ async function load(compare = true) {
       unclassifiedCustomers: next.headline.totalCustomers,
       levels: [],
     }
-    next.screenSettings ??= { ...defaultLeadershipScreenSettings }
+    next.screenSettings = { ...defaultLeadershipScreenSettings, ...(next.screenSettings ?? {}) }
+    const missingScenes = defaultLeadershipScreenSettings.sceneOrder
+      .filter((scene) => !next.screenSettings.sceneOrder.includes(scene))
+    next.screenSettings.sceneOrder = [...next.screenSettings.sceneOrder, ...missingScenes]
+    next.screenSettings.enabledScenes = [...new Set([
+      ...next.screenSettings.enabledScenes,
+      ...missingScenes,
+    ])]
+    next.featuredGrade ??= next.screenSettings.featuredGrade
     const wasStandby = standby.value
     const activityChanged = Boolean(previousData.value
       && previousData.value.lastBusinessActivityAt !== next.lastBusinessActivityAt)
@@ -274,6 +285,10 @@ async function toggleFullscreen() {
   else await document.documentElement.requestFullscreen()
 }
 
+function refreshWhenVisible() {
+  if (!document.hidden) void load(true)
+}
+
 onMounted(async () => {
   firstLoadedAt = Date.now()
   await load(false)
@@ -290,7 +305,7 @@ onMounted(async () => {
     now.value = new Date()
     evaluateStandby()
   }, 1000)
-  refreshTimer = window.setInterval(() => { void load(true) }, 60_000)
+  refreshTimer = window.setInterval(() => { void load(true) }, refreshIntervalMs)
   sceneTimer = window.setInterval(() => {
     if (standby.value && !activeEvent.value
       && Date.now() - lastSceneChange >= screenSettings.value.sceneDurationSeconds * 1_000) {
@@ -302,6 +317,8 @@ onMounted(async () => {
     window.addEventListener('pointerdown', wakeForInteraction)
     window.addEventListener('keydown', wakeForInteraction)
   }
+  window.addEventListener('focus', refreshWhenVisible)
+  document.addEventListener('visibilitychange', refreshWhenVisible)
 })
 onBeforeUnmount(() => {
   window.clearInterval(clockTimer)
@@ -310,6 +327,8 @@ onBeforeUnmount(() => {
   window.clearTimeout(eventTimer)
   window.removeEventListener('pointerdown', wakeForInteraction)
   window.removeEventListener('keydown', wakeForInteraction)
+  window.removeEventListener('focus', refreshWhenVisible)
+  document.removeEventListener('visibilitychange', refreshWhenVisible)
 })
 </script>
 
@@ -336,11 +355,20 @@ onBeforeUnmount(() => {
       <select v-model="days" @change="changeScope"><option :value="7">近 7 天</option><option :value="30">近 30 天</option><option :value="60">近 60 天</option><option :value="90">近 90 天</option></select>
       <button type="button" class="leadership-export" @click="downloadReport">⇩ 导出分析 Excel</button>
       <a v-if="!isStandalone" class="leadership-tv-link" href="/leadership-screen" target="_blank" rel="noopener">◈ 进入电视大屏</a>
-      <small v-if="data">{{ data.startDate }} — {{ data.endDate }} · 每 60 秒自动刷新</small>
+      <small v-if="data">{{ data.startDate }} — {{ data.endDate }} · 每 10 秒自动刷新</small>
     </div>
 
     <p v-if="error" class="leadership-error">{{ error }}</p>
     <template v-if="data">
+      <section v-if="data.tickerItems.length" class="leadership-ticker" aria-label="重要经营提示" data-testid="leadership-ticker">
+        <div class="leadership-ticker-track">
+          <template v-for="pass in 2" :key="pass">
+            <span v-for="item in data.tickerItems" :key="`${pass}-${item.id}`" :class="`priority-${item.priority.toLowerCase()}`">
+              <i></i>{{ item.text }}
+            </span>
+          </template>
+        </div>
+      </section>
       <section class="leadership-kpis leadership-kpis-total">
         <article class="tech-card kpi-card total-kpi-card cyan">
           <div class="kpi-icon">◉</div>
@@ -396,10 +424,10 @@ onBeforeUnmount(() => {
       <section class="leadership-ranking-zone">
         <header class="ranking-zone-header">
           <div>
-            <small>2026 COHORT · INDIVIDUAL PERFORMANCE MATRIX</small>
+            <small>{{ featuredGrade }} COHORT · INDIVIDUAL PERFORMANCE MATRIX</small>
             <h2>个人业绩五维排行榜</h2>
           </div>
-          <p><i></i>客户业绩仅看 2026 / 26级 · 任务榜统计全部任务 · 按当前负责人唯一归属</p>
+          <p><i></i>客户业绩仅看 {{ featuredGrade }} 级 · 任务榜统计全部任务 · 按当前负责人唯一归属</p>
         </header>
         <div class="rank-board-grid">
           <article

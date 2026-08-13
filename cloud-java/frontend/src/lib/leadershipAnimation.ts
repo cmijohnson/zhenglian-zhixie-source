@@ -104,7 +104,29 @@ export interface DisplayMessage {
   priority: 'NORMAL' | 'IMPORTANT' | 'URGENT'
   publishedAt: string
 }
-export type LeadershipSceneId = 'time' | 'culture' | 'briefing' | 'trend' | 'champions' | 'funnel' | 'mission'
+export interface StaleOwner { membershipId: string; displayName: string; customerCount: number }
+export interface AClassStaleSummary {
+  enabled: boolean
+  thresholdHours: number
+  customerCount: number
+  unassignedCount: number
+  owners: StaleOwner[]
+  calculatedAt: string
+}
+export interface SchoolComparison {
+  featuredGrade: string
+  institutionA: number
+  institutionB: number
+  difference: number
+  leader: 'INSTITUTION_A' | 'INSTITUTION_B' | 'TIED'
+}
+export interface TickerItem {
+  id: string
+  type: 'FOLLOW_UP_RISK' | 'SCHOOL_COMPARISON' | 'ANNOUNCEMENT'
+  priority: 'NORMAL' | 'IMPORTANT' | 'URGENT'
+  text: string
+}
+export type LeadershipSceneId = 'time' | 'culture' | 'briefing' | 'trend' | 'champions' | 'funnel' | 'mission' | 'followUpRisk' | 'schoolComparison'
 export type LeadershipEventType =
   'zeroBreakthrough' | 'customerAdded' | 'customerUpdated'
   | 'milestone' | 'trendSurge' | 'conversionStage'
@@ -120,6 +142,7 @@ export interface LeadershipScreenSettings {
   sceneOrder: LeadershipSceneId[]
   enabledScenes: LeadershipSceneId[]
   enabledEvents: LeadershipEventType[]
+  featuredGrade: string
   updatedAt?: string
   version: number
 }
@@ -130,13 +153,14 @@ export const defaultLeadershipScreenSettings: LeadershipScreenSettings = {
   sceneDurationSeconds: 12,
   eventDurationSeconds: 7,
   motionIntensity: 'CINEMATIC',
-  sceneOrder: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission'],
-  enabledScenes: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission'],
+  sceneOrder: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission', 'followUpRisk', 'schoolComparison'],
+  enabledScenes: ['time', 'culture', 'briefing', 'trend', 'champions', 'funnel', 'mission', 'followUpRisk', 'schoolComparison'],
   enabledEvents: [
     'zeroBreakthrough', 'customerAdded', 'customerUpdated',
     'milestone', 'trendSurge', 'conversionStage',
     'taskPublished', 'taskMilestone', 'rankingChange', 'teamMomentum',
   ],
+  featuredGrade: '2026',
   version: 0,
 }
 export interface LeadershipDashboardData {
@@ -160,6 +184,10 @@ export interface LeadershipDashboardData {
   recentTaskPublications: TaskPublication[]
   sources: SourceSlice[]
   displayMessages: DisplayMessage[]
+  featuredGrade: string
+  aClassStale: AClassStaleSummary
+  schoolComparison: SchoolComparison
+  tickerItems: TickerItem[]
   screenSettings: LeadershipScreenSettings
 }
 

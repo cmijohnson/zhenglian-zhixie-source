@@ -23,7 +23,8 @@ import java.util.UUID;
 @Service
 public class LeadershipScreenSettingsService {
     private static final List<String> SCENES =
-            List.of("time", "culture", "briefing", "trend", "champions", "funnel", "mission");
+            List.of("time", "culture", "briefing", "trend", "champions", "funnel", "mission",
+                    "followUpRisk", "schoolComparison");
     private static final List<String> EVENTS =
             List.of("zeroBreakthrough", "customerAdded", "customerUpdated",
                     "milestone", "trendSurge", "conversionStage",
@@ -65,6 +66,7 @@ public class LeadershipScreenSettingsService {
                 stored.animationsEnabled(), stored.standbyEnabled(), stored.idleTimeoutMinutes(),
                 stored.sceneDurationSeconds(), stored.eventDurationSeconds(), stored.motionIntensity(),
                 stored.sceneOrder(), stored.enabledScenes(), stored.enabledEvents(),
+                stored.featuredGrade(),
                 stored.updatedAt(), stored.version());
     }
 
@@ -85,13 +87,14 @@ public class LeadershipScreenSettingsService {
                       organization_id, animations_enabled, standby_enabled, idle_timeout_minutes,
                       scene_duration_seconds, event_duration_seconds, motion_intensity,
                       scene_order, enabled_scenes, enabled_events,
+                      featured_grade,
                       updated_by_membership_id, updated_at, version
-                    ) values (?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), cast(? as jsonb), cast(? as jsonb), ?, ?, 1)
+                    ) values (?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), cast(? as jsonb), cast(? as jsonb), ?, ?, ?, 1)
                     on conflict (organization_id) do nothing
                     """, actor.organizationId(), request.animationsEnabled(), request.standbyEnabled(),
                     request.idleTimeoutMinutes(), request.sceneDurationSeconds(), request.eventDurationSeconds(),
                     validated.motionIntensity(), json(validated.sceneOrder()), json(validated.enabledScenes()),
-                    json(validated.enabledEvents()), actor.membershipId(), Timestamp.from(now));
+                    json(validated.enabledEvents()), validated.featuredGrade(), actor.membershipId(), Timestamp.from(now));
             if (count != 1) {
                 throw ApiException.conflict("STALE_VERSION", "大屏配置已被其他管理员更新，请刷新后重试");
             }
@@ -101,13 +104,13 @@ public class LeadershipScreenSettingsService {
                     set animations_enabled=?, standby_enabled=?, idle_timeout_minutes=?,
                         scene_duration_seconds=?, event_duration_seconds=?, motion_intensity=?,
                         scene_order=cast(? as jsonb), enabled_scenes=cast(? as jsonb),
-                        enabled_events=cast(? as jsonb), updated_by_membership_id=?,
+                        enabled_events=cast(? as jsonb), featured_grade=?, updated_by_membership_id=?,
                         updated_at=?, version=version+1
                     where organization_id=? and version=?
                     """, request.animationsEnabled(), request.standbyEnabled(), request.idleTimeoutMinutes(),
                     request.sceneDurationSeconds(), request.eventDurationSeconds(), validated.motionIntensity(),
                     json(validated.sceneOrder()), json(validated.enabledScenes()), json(validated.enabledEvents()),
-                    actor.membershipId(), Timestamp.from(now), actor.organizationId(), stored.version());
+                    validated.featuredGrade(), actor.membershipId(), Timestamp.from(now), actor.organizationId(), stored.version());
             if (count != 1) {
                 throw ApiException.conflict("STALE_VERSION", "大屏配置已被其他管理员更新，请刷新后重试");
             }
@@ -117,6 +120,7 @@ public class LeadershipScreenSettingsService {
                         "animationsEnabled", request.animationsEnabled(),
                         "standbyEnabled", request.standbyEnabled(),
                         "motionIntensity", validated.motionIntensity(),
+                        "featuredGrade", validated.featuredGrade(),
                         "enabledSceneCount", validated.enabledScenes().size(),
                         "enabledEventCount", validated.enabledEvents().size()));
         return effective(actor.organizationId());
@@ -139,10 +143,15 @@ public class LeadershipScreenSettingsService {
                 || new HashSet<>(request.enabledEvents()).size() != request.enabledEvents().size()) {
             throw ApiException.badRequest("LEADERSHIP_EVENTS_INVALID", "启用的事件动画包含未知或重复项目");
         }
+        String featuredGrade = request.featuredGrade().trim();
+        if (!featuredGrade.matches("^(19|20)\\d{2}$")) {
+            throw ApiException.badRequest("LEADERSHIP_FEATURED_GRADE_INVALID", "重点年级必须是四位年份");
+        }
         List<String> enabledScenes = request.sceneOrder().stream()
                 .filter(request.enabledScenes()::contains).toList();
         List<String> enabledEvents = EVENTS.stream().filter(request.enabledEvents()::contains).toList();
-        return new Validated(intensity, List.copyOf(request.sceneOrder()), enabledScenes, enabledEvents);
+        return new Validated(intensity, List.copyOf(request.sceneOrder()), enabledScenes, enabledEvents,
+                featuredGrade);
     }
 
     private Stored stored(UUID organizationId) {
@@ -150,6 +159,7 @@ public class LeadershipScreenSettingsService {
                 select animations_enabled, standby_enabled, idle_timeout_minutes,
                        scene_duration_seconds, event_duration_seconds, motion_intensity,
                        scene_order::text, enabled_scenes::text, enabled_events::text,
+                       featured_grade,
                        updated_at, version
                 from leadership_screen_settings
                 where organization_id=?
@@ -158,14 +168,15 @@ public class LeadershipScreenSettingsService {
                 row.getInt("idle_timeout_minutes"), row.getInt("scene_duration_seconds"),
                 row.getInt("event_duration_seconds"), row.getString("motion_intensity"),
                 strings(row.getString("scene_order")), strings(row.getString("enabled_scenes")),
-                strings(row.getString("enabled_events")), row.getTimestamp("updated_at").toInstant(),
+                strings(row.getString("enabled_events")), row.getString("featured_grade"),
+                row.getTimestamp("updated_at").toInstant(),
                 row.getLong("version")), organizationId).stream().findFirst().orElse(null);
     }
 
     private LeadershipScreenSettingsDtos.Settings defaults() {
         return new LeadershipScreenSettingsDtos.Settings(
                 true, true, 20, 12, 7, "CINEMATIC",
-                SCENES, SCENES, EVENTS, null, 0);
+                SCENES, SCENES, EVENTS, "2026", null, 0);
     }
 
     private String json(List<String> values) {
@@ -188,7 +199,8 @@ public class LeadershipScreenSettingsService {
             String motionIntensity,
             List<String> sceneOrder,
             List<String> enabledScenes,
-            List<String> enabledEvents
+            List<String> enabledEvents,
+            String featuredGrade
     ) {}
 
     private record Stored(
@@ -201,6 +213,7 @@ public class LeadershipScreenSettingsService {
             List<String> sceneOrder,
             List<String> enabledScenes,
             List<String> enabledEvents,
+            String featuredGrade,
             Instant updatedAt,
             long version
     ) {}

@@ -569,6 +569,59 @@ describe('large mocked workflow views', () => {
     expect(router.currentRoute.value.path).toBe('/customers/customer-1/edit')
   })
 
+  it('renders versioned read-only customer intelligence and queues an explicit reanalysis', async () => {
+    authenticate(['MEMBER'])
+    const existing = { ...customer(1), fullName: '智能分析客户', tags: [] }
+    const collaboration = {
+      ownerMembershipId: 'member-1', canManage: true, canTransferOwnership: true,
+      canEditProfile: true, canArchive: true, canEditTimeline: true,
+      collaborators: [], candidates: [], transferCandidates: [],
+    }
+    const overview = {
+      customerId: 'customer-1', enabled: true, processing: false,
+      latest: {
+        id: 'analysis-1', versionNumber: 2, triggerType: 'TIMELINE_UPDATED', status: 'SUCCEEDED',
+        narrative: '客户希望确认转专业路径，当前仍需核实时间安排。',
+        result: {
+          goals: ['确认转专业路径'], progress: ['已完成首次沟通'], concerns: ['时间安排未确认'],
+          risks: ['关键信息不完整'], recommendedActions: ['下次沟通确认时间'],
+          unresolvedQuestions: ['最终申请时间'],
+        },
+        evidence: [{ sourceType: 'INTERACTION', sourceKey: 'interaction:1',
+          sourceAt: '2026-08-14T01:00:00Z', excerpt: '客户希望了解转专业路径。' }],
+        model: 'uat-contract-model', createdAt: '2026-08-14T01:01:00Z',
+      },
+    }
+    apiMock.mockImplementation((path: string, init?: RequestInit) => {
+      if (path === '/api/v1/customers/customer-1') return Promise.resolve(existing)
+      if (path === '/api/v1/customers/customer-1/interactions') return Promise.resolve([])
+      if (path === '/api/v1/tags') return Promise.resolve([])
+      if (path === '/api/v1/customers/customer-1/collaboration') return Promise.resolve(collaboration)
+      if (path === '/api/v1/customers/customer-1/intelligence' && !init) return Promise.resolve(overview)
+      if (path === '/api/v1/customers/customer-1/intelligence/reanalyze' && init?.method === 'POST') {
+        return Promise.resolve({ ...overview, processing: true, processingStatus: 'PENDING' })
+      }
+      return Promise.resolve(undefined)
+    })
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/customers/:id', component: CustomerDetailView }],
+    })
+    await router.push('/customers/customer-1')
+    await router.isReady()
+    const wrapper = mount(CustomerDetailView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="customer-intelligence"]').text()).toContain('AI 客户洞察')
+    expect(wrapper.text()).toContain('客户希望确认转专业路径')
+    expect(wrapper.text()).toContain('版本 2')
+    expect(wrapper.text()).toContain('不会自动改写正式档案')
+    await wrapper.get('[data-testid="customer-intelligence"] button').trigger('click')
+    await flushPromises()
+    expect(apiMock).toHaveBeenCalledWith('/api/v1/customers/customer-1/intelligence/reanalyze', { method: 'POST' })
+    expect(wrapper.text()).toContain('分析队列中')
+  })
+
   it('transfers customer ownership from the profile with an explicit recipient and version', async () => {
     authenticate(['MEMBER'])
     const existing = {

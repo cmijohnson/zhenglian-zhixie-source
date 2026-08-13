@@ -9,6 +9,7 @@ import com.yingge.cloud.followup.application.CustomerFollowUpService;
 import com.yingge.cloud.interaction.api.InteractionDtos;
 import com.yingge.cloud.interaction.infrastructure.InteractionEntity;
 import com.yingge.cloud.interaction.infrastructure.InteractionRepository;
+import com.yingge.cloud.intelligence.application.CustomerIntelligenceQueue;
 import com.yingge.cloud.permission.application.PermissionService;
 import com.yingge.cloud.reminder.application.ReminderPort;
 import com.yingge.cloud.shared.api.ApiException;
@@ -35,11 +36,13 @@ public class InteractionService {
     private final AuditService audit;
     private final CustomerFollowUpService followUps;
     private final EntityManager entityManager;
+    private final CustomerIntelligenceQueue intelligenceQueue;
 
     public InteractionService(InteractionRepository interactions, CustomerService customers, TagRepository tags,
                               ReminderPort reminders, CurrentActorProvider actors,
                               PermissionService permissions, AuditService audit,
-                              CustomerFollowUpService followUps, EntityManager entityManager) {
+                              CustomerFollowUpService followUps, EntityManager entityManager,
+                              CustomerIntelligenceQueue intelligenceQueue) {
         this.interactions = interactions;
         this.customers = customers;
         this.tags = tags;
@@ -49,6 +52,7 @@ public class InteractionService {
         this.audit = audit;
         this.followUps = followUps;
         this.entityManager = entityManager;
+        this.intelligenceQueue = intelligenceQueue;
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +102,8 @@ public class InteractionService {
                 java.util.Map.of("customerId", customerId.toString()));
         followUps.completeStaleReminders(actor.organizationId(), customerId);
         followUps.reconcileCustomer(actor.organizationId(), customerId);
+        intelligenceQueue.enqueue(actor.organizationId(), customerId,
+                CustomerIntelligenceQueue.TriggerType.TIMELINE_UPDATED, actor.membershipId());
         return InteractionDtos.Response.from(interaction, actor.displayName());
     }
 

@@ -23,6 +23,7 @@
         <sqlite.version>3.50.3.0</sqlite.version>
         <bouncycastle.version>1.81</bouncycastle.version>
         <mcp.version>1.1.2</mcp.version>
+        <langchain4j.version>1.18.0</langchain4j.version>
     </properties>
 
     <dependencies>
@@ -97,6 +98,11 @@
             <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp-json-jackson2</artifactId>
             <version>${mcp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-core</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
 
         <dependency>

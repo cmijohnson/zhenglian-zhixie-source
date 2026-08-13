@@ -65,6 +65,7 @@ async function logout() {
         <RouterLink v-if="auth.isAdmin" to="/admin/performance"><span>◆</span>绩效管理</RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/admin/follow-up"><span>⇄</span>跟进与咨询设置</RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/admin/customer-enrichment"><span>⊕</span>客户资料补全</RouterLink>
+        <RouterLink v-if="auth.isAdmin" to="/admin/customer-intelligence"><span>✧</span>客户智能分析</RouterLink>
       </nav>
       <div class="sidebar-footer">
         <RouterLink to="/settings" class="profile-link">

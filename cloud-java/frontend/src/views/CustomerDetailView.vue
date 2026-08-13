@@ -21,6 +21,16 @@ interface CollaborationOverview {
   candidates: CollaborationMember[]
   transferCandidates: CollaborationMember[]
 }
+interface IntelligenceEvidence { sourceType: string; sourceKey: string; sourceAt?: string; excerpt: string }
+interface IntelligenceVersion {
+  id: string; versionNumber: number; triggerType: string; status: string
+  result?: Record<string, unknown>; narrative?: string; evidence: IntelligenceEvidence[]
+  provider?: string; model?: string; sourceWatermark?: string; createdAt: string
+}
+interface IntelligenceOverview {
+  customerId: string; enabled: boolean; processing: boolean; processingStatus?: string
+  latest?: IntelligenceVersion
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -29,6 +39,8 @@ const customer = ref<Customer>()
 const interactions = ref<Interaction[]>([])
 const tags = ref<Tag[]>([])
 const collaboration = ref<CollaborationOverview>()
+const intelligence = ref<IntelligenceOverview>()
+const intelligenceBusy = ref(false)
 const panelOpen = ref(false)
 const sharingOpen = ref(false)
 const transferOpen = ref(false)
@@ -67,6 +79,19 @@ const editLocation = computed(() => ({
 }))
 const selectedTransferTarget = computed(() => collaboration.value?.transferCandidates
   .find((member) => member.membershipId === transfer.targetMembershipId))
+const intelligenceResult = computed(() => intelligence.value?.latest?.result ?? {})
+
+function intelligenceList(key: string) {
+  const value = intelligenceResult.value[key]
+  if (Array.isArray(value)) return value.map(String).filter(Boolean)
+  if (typeof value === 'string' && value.trim()) return [value]
+  return []
+}
+
+async function loadIntelligence() {
+  try { intelligence.value = await api<IntelligenceOverview>(`/api/v1/customers/${id}/intelligence`) }
+  catch { intelligence.value = undefined }
+}
 
 async function load() {
   const [loadedCustomer, loadedInteractions, loadedTags, loadedCollaboration] = await Promise.all([
@@ -79,6 +104,17 @@ async function load() {
   collaboration.value = loadedCollaboration
   selectedCollaborators.value = loadedCollaboration.collaborators.map((member) => member.membershipId)
   record.tagIds = loadedCustomer.tags.filter((tag) => tags.value.some((option) => option.id === tag.id)).map((tag) => tag.id)
+  await loadIntelligence()
+}
+
+async function reanalyze() {
+  intelligenceBusy.value = true
+  error.value = ''
+  try {
+    intelligence.value = await api<IntelligenceOverview>(`/api/v1/customers/${id}/intelligence/reanalyze`, { method: 'POST' })
+  } catch (reason) {
+    error.value = reason instanceof ApiError ? reason.message : '无法发起客户智能分析'
+  } finally { intelligenceBusy.value = false }
 }
 
 function openSharing() {
@@ -168,6 +204,39 @@ onMounted(load)
       <div class="profile-identity"><span class="avatar large">{{ customer.fullName.slice(0, 1) }}</span><div><div class="title-line"><h1>{{ customer.fullName }}</h1><span v-if="customerQualityTag" :class="['customer-quality-badge', `quality-${customerQualityCode(customerQualityTag).toLowerCase()}`]"><b>{{ customerQualityCode(customerQualityTag) }}</b>{{ customerQualityTag.name }}</span><StatusBadge v-else value="未评级" tone="gray" /><StatusBadge :value="customer.intentionLevel + '意向'" :tone="customer.intentionLevel === '高' ? 'green' : 'blue'" /><StatusBadge :value="customer.currentStatus" /><StatusBadge :value="friendStage" :tone="customer.friendQualifiedAt ? 'green' : customer.friendAddedAt ? 'blue' : 'gray'" /></div><p>{{ contact || '无联系方式' }}</p><p class="muted">{{ customer.school || '学校未补充' }} · {{ customer.major || '专业未补充' }} · {{ formatCustomerGrade(customer.grade) || '年级未补充' }} · {{ customer.focusDirections.join(' / ') }}</p></div></div>
       <div class="header-actions"><button class="ghost-button" data-testid="customer-parent-return" @click="returnToParent">{{ parentLabel }}</button><button v-if="collaboration?.canTransferOwnership && !customer.archivedAt" class="ghost-button" data-testid="transfer-customer" @click="openTransfer">转接客户</button><button v-if="collaboration?.canManage && !customer.archivedAt" class="ghost-button" data-testid="share-customer" @click="openSharing">共享跟进</button><button v-if="collaboration?.canEditTimeline && !customer.archivedAt" class="ghost-button" @click="router.push({ path: '/consultations', query: { customerId: id } })">发起咨询交接</button><button v-if="collaboration?.canEditTimeline && !customer.archivedAt" class="ghost-button" @click="router.push({ path: '/qq-chat', query: { customerId: id } })">导入 QQ 对话</button><button v-if="collaboration?.canEditProfile && !customer.archivedAt" class="ghost-button" data-testid="edit-customer" @click="router.push(editLocation)">编辑画像</button><a :href="`/api/v1/exports/customers/${id}/timeline?format=xlsx`" class="ghost-button">导出时间线</a><button v-if="collaboration?.canEditTimeline && !customer.archivedAt" class="primary-button" @click="panelOpen = true">＋ 记录沟通</button></div>
     </header>
+    <section v-if="intelligence?.enabled" class="panel customer-intelligence-panel" data-testid="customer-intelligence">
+      <header class="panel-title">
+        <div><p class="eyebrow">CUSTOMER INTELLIGENCE</p><h2>AI 客户洞察</h2><p class="muted">仅根据当前画像和已记录时间线分析，不会自动改写正式档案。</p></div>
+        <div class="header-actions">
+          <span v-if="intelligence.processing" class="intelligence-processing"><i></i>分析队列中</span>
+          <button v-if="collaboration?.canEditTimeline" class="ghost-button" type="button" :disabled="intelligenceBusy || intelligence.processing" @click="reanalyze">{{ intelligenceBusy ? '正在发起…' : '重新分析' }}</button>
+        </div>
+      </header>
+      <template v-if="intelligence.latest">
+        <div class="intelligence-summary">
+          <span>EXECUTIVE SUMMARY</span><p>{{ intelligence.latest.narrative }}</p>
+          <small>版本 {{ intelligence.latest.versionNumber }} · {{ dateTime(intelligence.latest.createdAt) }} · {{ intelligence.latest.model }}</small>
+        </div>
+        <div class="intelligence-grid">
+          <article v-for="section in [
+            { key: 'goals', title: '目标与动机' },
+            { key: 'progress', title: '已有进展' },
+            { key: 'concerns', title: '主要顾虑' },
+            { key: 'risks', title: '转化风险' },
+            { key: 'recommendedActions', title: '建议动作' },
+            { key: 'unresolvedQuestions', title: '待核实事项' },
+          ]" :key="section.key">
+            <h3>{{ section.title }}</h3>
+            <ul v-if="intelligenceList(section.key).length"><li v-for="item in intelligenceList(section.key)" :key="item">{{ item }}</li></ul>
+            <p v-else>未确认</p>
+          </article>
+        </div>
+        <details class="intelligence-evidence"><summary>查看分析证据 · {{ intelligence.latest.evidence.length }} 条</summary><div><article v-for="source in intelligence.latest.evidence" :key="source.sourceKey"><b>{{ source.sourceType }}</b><span>{{ dateTime(source.sourceAt) }}</span><p>{{ source.excerpt }}</p></article></div></details>
+      </template>
+      <div v-else class="empty-state">
+        {{ intelligence.processing ? '首次分析正在队列中，结果将以可追溯版本保存。' : '新增客户画像或沟通时间线后，系统将自动生成首次洞察。' }}
+      </div>
+    </section>
     <div class="profile-grid">
       <aside class="panel profile-facts">
         <div class="panel-title"><div><p class="eyebrow">PROFILE</p><h2>客户画像</h2></div></div>

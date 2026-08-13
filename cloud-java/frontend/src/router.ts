@@ -35,6 +35,7 @@ import QqChatView from './views/QqChatView.vue'
 import ConsultationsView from './views/ConsultationsView.vue'
 import AdminFollowUpSettingsView from './views/AdminFollowUpSettingsView.vue'
 import AdminCustomerEnrichmentView from './views/AdminCustomerEnrichmentView.vue'
+import AdminCustomerIntelligenceView from './views/AdminCustomerIntelligenceView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -82,6 +83,7 @@ const router = createRouter({
         { path: 'admin/performance', component: AdminPerformanceView, meta: { admin: true } },
         { path: 'admin/follow-up', component: AdminFollowUpSettingsView, meta: { admin: true } },
         { path: 'admin/customer-enrichment', component: AdminCustomerEnrichmentView, meta: { admin: true } },
+        { path: 'admin/customer-intelligence', component: AdminCustomerIntelligenceView, meta: { admin: true } },
         { path: 'settings', component: SettingsView },
       ],
     },
