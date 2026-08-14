@@ -8,7 +8,8 @@ RUN mvn -q -DskipTests package
 FROM eclipse-temurin:21-jre-alpine
 RUN apk add --no-cache wget \
     && addgroup -S app \
-    && adduser -S -G app app
+    && adduser -S -G app app \
+    && install -d -m 0700 -o app -g app /data/qq-imports
 WORKDIR /app
 COPY --from=build /workspace/target/yingge-cloud-backend-*.jar app.jar
 USER app
