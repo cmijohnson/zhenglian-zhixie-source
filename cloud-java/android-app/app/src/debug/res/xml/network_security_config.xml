@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Enterprise debug builds may target another explicitly confirmed HTTP origin.
+         ServerOriginValidator still fail-closes every request to the exact saved origin. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

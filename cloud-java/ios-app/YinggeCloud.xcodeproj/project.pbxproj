@@ -1,0 +1,104 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A0010001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010001 /* Models.swift */; };
+		A0010002 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010002 /* APIClient.swift */; };
+		A0010003 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010003 /* SecureStorage.swift */; };
+		A0010004 /* EndpointCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010004 /* EndpointCatalog.swift */; };
+		A0010005 /* BusinessModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010005 /* BusinessModels.swift */; };
+		A0010010 /* YinggeCloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010010 /* YinggeCloudApp.swift */; };
+		A0010011 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010011 /* AppModel.swift */; };
+		A0010012 /* LiveYinggeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010012 /* LiveYinggeRepository.swift */; };
+		A0010020 /* YinggeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010020 /* YinggeTheme.swift */; };
+		A0010030 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010030 /* LoginView.swift */; };
+		A0010031 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010031 /* RootTabView.swift */; };
+		A0010032 /* CustomersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010032 /* CustomersView.swift */; };
+		A0010033 /* CustomerFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010033 /* CustomerFormView.swift */; };
+		A0010034 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010034 /* TimelineView.swift */; };
+		A0010035 /* ReminderDailyViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010035 /* ReminderDailyViews.swift */; };
+		A0010036 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010036 /* MoreView.swift */; };
+		A0010037 /* QQWorkbenchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010037 /* QQWorkbenchView.swift */; };
+		A0010038 /* BusinessFeatureHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010038 /* BusinessFeatureHub.swift */; };
+		A0010039 /* NativeBusinessViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010039 /* NativeBusinessViews.swift */; };
+		A0010040 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0010040 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B0010001 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		B0010002 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		B0010003 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
+		B0010004 /* EndpointCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndpointCatalog.swift; sourceTree = "<group>"; };
+		B0010005 /* BusinessModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusinessModels.swift; sourceTree = "<group>"; };
+		B0010010 /* YinggeCloudApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YinggeCloudApp.swift; sourceTree = "<group>"; };
+		B0010011 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		B0010012 /* LiveYinggeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveYinggeRepository.swift; sourceTree = "<group>"; };
+		B0010020 /* YinggeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YinggeTheme.swift; sourceTree = "<group>"; };
+		B0010030 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		B0010031 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		B0010032 /* CustomersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersView.swift; sourceTree = "<group>"; };
+		B0010033 /* CustomerFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerFormView.swift; sourceTree = "<group>"; };
+		B0010034 /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
+		B0010035 /* ReminderDailyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderDailyViews.swift; sourceTree = "<group>"; };
+		B0010036 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
+		B0010037 /* QQWorkbenchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QQWorkbenchView.swift; sourceTree = "<group>"; };
+		B0010038 /* BusinessFeatureHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusinessFeatureHub.swift; sourceTree = "<group>"; };
+		B0010039 /* NativeBusinessViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBusinessViews.swift; sourceTree = "<group>"; };
+		B0010040 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B0010041 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B0010042 /* YinggeCloud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YinggeCloud.entitlements; sourceTree = "<group>"; };
+		B0010050 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		B0010051 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		B0010099 /* YinggeCloud.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = YinggeCloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C0010001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C0010010 = {isa = PBXGroup; children = (C0010011, C0010020, C0010030, C0010040); sourceTree = "<group>"; };
+		C0010011 = {isa = PBXGroup; path = Sources/YinggeCore; sourceTree = "<group>"; children = (B0010001, B0010002, B0010003, B0010004, B0010005); };
+		C0010020 = {isa = PBXGroup; path = YinggeCloud; sourceTree = "<group>"; children = (C0010021, C0010022, C0010023, C0010024); };
+		C0010021 = {isa = PBXGroup; path = App; sourceTree = "<group>"; children = (B0010010, B0010011, B0010012); };
+		C0010022 = {isa = PBXGroup; path = Design; sourceTree = "<group>"; children = (B0010020); };
+		C0010023 = {isa = PBXGroup; path = Features; sourceTree = "<group>"; children = (B0010030, B0010031, B0010032, B0010033, B0010034, B0010035, B0010036, B0010037, B0010038, B0010039); };
+		C0010024 = {isa = PBXGroup; path = Resources; sourceTree = "<group>"; children = (B0010040, B0010041, B0010042); };
+		C0010030 = {isa = PBXGroup; path = Config; sourceTree = "<group>"; children = (B0010050, B0010051); };
+		C0010040 = {isa = PBXGroup; name = Products; sourceTree = "<group>"; children = (B0010099); };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D0010001 = {isa = PBXNativeTarget; buildConfigurationList = D0010002; buildPhases = (C0010100, C0010001, C0010101); buildRules = (); dependencies = (); name = YinggeCloud; productName = YinggeCloud; productReference = B0010099; productType = "com.apple.product-type.application"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D0010010 = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {D0010001 = {CreatedOnToolsVersion = 16.0; }; }; }; buildConfigurationList = D0010011; compatibilityVersion = "Xcode 14.0"; developmentRegion = zh-Hans; hasScannedForEncodings = 0; knownRegions = (Base, "zh-Hans", en); mainGroup = C0010010; productRefGroup = C0010040; projectDirPath = ""; projectRoot = ""; targets = (D0010001); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C0010101 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A0010040); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C0010100 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A0010001, A0010002, A0010003, A0010004, A0010005, A0010010, A0010011, A0010012, A0010020, A0010030, A0010031, A0010032, A0010033, A0010034, A0010035, A0010036, A0010037, A0010038, A0010039); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		E0010001 = {isa = XCBuildConfiguration; baseConfigurationReference = B0010050; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+		E0010002 = {isa = XCBuildConfiguration; baseConfigurationReference = B0010051; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
+		E0010010 = {isa = XCBuildConfiguration; baseConfigurationReference = B0010050; buildSettings = {ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = YinggeCloud/Resources/YinggeCloud.entitlements; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = YinggeCloud/Resources/Info.plist; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		E0010011 = {isa = XCBuildConfiguration; baseConfigurationReference = B0010051; buildSettings = {ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = YinggeCloud/Resources/YinggeCloud.entitlements; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = YinggeCloud/Resources/Info.plist; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D0010002 = {isa = XCConfigurationList; buildConfigurations = (E0010010, E0010011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		D0010011 = {isa = XCConfigurationList; buildConfigurations = (E0010001, E0010002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = D0010010;
+}

@@ -1,0 +1,17 @@
+node_modules/
+target/
+dist/
+build/
+.build/
+.gradle/
+.env
+.env.*
+!.env.example
+*.log
+*.jks
+*.keystore
+*.p12
+*.pem
+keystore.properties
+local.properties
+.DS_Store

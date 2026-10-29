@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- The user explicitly opted into arbitrary HTTP origins for the enterprise build.
+         ServerOriginValidator still requires an explicit confirmation and OkHttp binds
+         every request and credential to the exact selected scheme/host/port origin. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
