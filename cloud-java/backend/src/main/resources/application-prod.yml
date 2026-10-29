@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        format_sql: false
+  mvc:
+    problemdetails:
+      enabled: false
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
+
+app:
+  mcp:
+    issuer: ${MCP_ISSUER:https://crm.example.com}
+    resource-uri: ${MCP_RESOURCE_URI:https://crm.example.com/mcp}
+    allowed-origins: ${MCP_ALLOWED_ORIGINS:https://crm.example.com}
+    allowed-hosts: ${MCP_ALLOWED_HOSTS:crm.example.com}
