@@ -216,7 +216,7 @@ public class McpToolRegistry {
         tools.add(write("yingge_customer_lead_review", "审核有效线索", "管理员或团队长审核客户线索。",
                 idBodySchema("customerId", CustomerDtos.LeadReviewRequest.class, false), false, call ->
                         customers.reviewLead(parseUuid(call.arguments(), "customerId"), body(call, CustomerDtos.LeadReviewRequest.class))));
-        tools.add(read("yingge_customer_collaboration_get", "读取客户共享", "读取主负责人、协作者和候选成员。",
+        tools.add(read("yingge_customer_collaboration_get", "读取客户共享", "读取主负责人、协作者和可选成员。",
                 McpToolSchemas.fields(Map.of("customerId", uuid()), "customerId"),
                 call -> customers.collaboration(parseUuid(call.arguments(), "customerId"))));
         tools.add(write("yingge_customer_collaboration_replace", "设置客户共享", "主负责人设置共同维护时间线的协作者。",

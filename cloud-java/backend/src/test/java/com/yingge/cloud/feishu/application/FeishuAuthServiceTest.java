@@ -65,7 +65,7 @@ class FeishuAuthServiceTest {
         when(integrations.findActiveOAuthById(integrationId)).thenReturn(integration(integrationId));
 
         assertThatThrownBy(() -> service(
-                "http://192.0.2.10/api/v1/auth/feishu/callback", false)
+                "http://10.0.0.8/api/v1/auth/feishu/callback", false)
                 .start("LOGIN", integrationId, "/dashboard"))
                 .isInstanceOfSatisfying(ApiException.class,
                         error -> assertThat(error.code()).isEqualTo("FEISHU_HTTPS_REQUIRED"));
@@ -77,7 +77,7 @@ class FeishuAuthServiceTest {
         when(integrations.findActiveOAuthById(integrationId)).thenReturn(integration(integrationId));
         when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
 
-        assertThat(service("http://192.0.2.10/api/v1/auth/feishu/callback", true)
+        assertThat(service("http://10.0.0.8/api/v1/auth/feishu/callback", true)
                 .start("LOGIN", integrationId, "/dashboard").authorizeUrl()).contains("accounts.feishu.cn");
         assertThatThrownBy(() -> service(
                 "http://public.example.cn/api/v1/auth/feishu/callback", true)
@@ -102,7 +102,7 @@ class FeishuAuthServiceTest {
                 UsernamePasswordAuthenticationToken.authenticated(principal, "", Set.of()));
 
         FeishuAuthService.StartResult result = service(
-                "http://192.0.2.10/api/v1/auth/feishu/callback", true)
+                "http://10.0.0.8/api/v1/auth/feishu/callback", true)
                 .start("SUBSCRIBE", integrationId, "/admin/feishu?feishuSubscription=ready");
 
         assertThat(result.authorizeUrl())

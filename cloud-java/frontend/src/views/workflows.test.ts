@@ -729,7 +729,7 @@ describe('large mocked workflow views', () => {
   it('refreshes transfer candidates when the ownership drawer opens', async () => {
     authenticate(['ORG_ADMIN'])
     const existing = {
-      ...customer(1), fullName: '候选人刷新客户', ownerDisplayName: '原负责人甲',
+      ...customer(1), fullName: '可选人刷新客户', ownerDisplayName: '原负责人甲',
       creatorDisplayName: '录入人乙', version: 4,
     }
     const emptyOverview = {

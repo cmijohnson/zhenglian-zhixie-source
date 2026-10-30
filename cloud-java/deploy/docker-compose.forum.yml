@@ -1,14 +1,11 @@
 services:
   forum:
-    image: yingge-notes-frontend:1.0.2
-    container_name: yingge-notes-forum
+    build:
+      context: ./forum-frontend
     restart: unless-stopped
     ports:
-      - "38321:80"
-    networks:
-      - yingge-app
-
-networks:
-  yingge-app:
-    external: true
-    name: app_app
+      - "${FORUM_HTTP_PORT:-38321}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [app]

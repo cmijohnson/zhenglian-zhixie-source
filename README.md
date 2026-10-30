@@ -127,6 +127,34 @@ QCE 构建脚本使用固定源码 revision，并应用仓库内的集成补丁�
 
 本次源码整理验证：后端 Maven 打包、Web 构建通过；Web 单元测试 129 项、QQ Bridge 测试 15 项通过。运行环境所需的账号、模型接口和外部平台应用由部署者配置。
 
+## 固定种子数据与复现
+
+公开仓库统一为 **https://github.com/cmijohnson/zhenglian-zhixie-source**。源码、QQ桥接、合成数据工具和正式资源清单使用同一发布版本。
+
+默认种子为 `20260927`。生成器构造两个组织、四种角色、60个客户、900条沟通记录、60项跟进任务及60个AI测试案例，包含完整事实、冲突、稀疏信息、旧记录、提示注入文本和跨域诱饵。数据的引用关系、组织归属和确定性由测试验证。
+
+```bash
+# 在仓库根目录执行：仅使用 Python 标准库
+python3 tests/competition/generate_synthetic_dataset.py --seed 20260927 --output .reproduction/data
+python3 scripts/reproduce.py --mode data-only --output .reproduction/data-check
+
+# 具备 Docker、JDK21、Maven、Node.js22 后运行完整源码验证
+python3 scripts/reproduce.py --mode full --output .reproduction/full
+
+# 验证固定 QCE 上游版本与本项目集成补丁（需要网络）
+python3 scripts/reproduce_qce_patch.py --output .reproduction/qce-patch.json
+```
+
+`full` 运行两次数据生成与字节比较、数据校验测试、Web构建与测试、QQ桥接构建与测试、后端 `mvn verify` 和 Testcontainers 测试。`offline` 使用本机已安装依赖，执行同类前端/桥接检查和脚本中明确列出的后端单元测试；`data-only` 执行数据生成及校验。
+
+复现输出含 `manifest.json`、步骤日志、数据文件与 `SHA256SUMS`，记录实际退出码、测试数、跳过数、版本及哈希。在线模型效果、QQ账号登录和平台调用以各自的业务运行记录计量；本复现入口验证数据与软件实现。
+
+- [数据结构与用途](docs/DATASET_CARD.md)
+- [开源及第三方资源使用清单](docs/OPEN_SOURCE_RESOURCES.md)
+- [版本化资源明细](docs/resources.json)
+- [锁文件依赖清单](docs/dependency-inventory.json)
+- [源码与附件发布](https://github.com/cmijohnson/zhenglian-zhixie-source/releases)
+
 ## 开发记录
 
 以下时间对应原仓库真实提交的作者日期，时区为 UTC+08:00。历史源码经过与当前版本相同的脱敏处理后重新导入，因此提交哈希发生变化；原始哈希写入各提交消息的 `Original-Commit` 字段。提交者日期记录本次导入时间，作者身份统一匿名化。

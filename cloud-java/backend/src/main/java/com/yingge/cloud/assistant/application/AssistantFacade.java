@@ -193,7 +193,7 @@ public class AssistantFacade {
                         "nextFollowUpAt", row.getNextFollowUpAt() == null ? "" : row.getNextFollowUpAt().toString()
                 )).toList();
         return text("DAILY_BRIEFING", null, PRIVACY_SYSTEM,
-                "基于以下已通过权限过滤的候选客户生成今日简报，按紧急性排序：" + json(candidates));
+                "基于以下已通过权限过滤的可选客户生成今日简报，按紧急性排序：" + json(candidates));
     }
 
     @Transactional

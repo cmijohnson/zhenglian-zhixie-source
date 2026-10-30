@@ -15,3 +15,7 @@ build/
 keystore.properties
 local.properties
 .DS_Store
+
+.reproduction/
+__pycache__/
+*.py[cod]

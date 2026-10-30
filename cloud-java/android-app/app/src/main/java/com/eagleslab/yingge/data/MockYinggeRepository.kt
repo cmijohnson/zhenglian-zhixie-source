@@ -244,7 +244,7 @@ class MockYinggeRepository : YinggeRepository {
         val definitions = mapOf(
             "pool" to ("客户公共池" to listOf("A 类二线招募 3 项", "C 类释放池 1 项", "认领前仅显示脱敏摘要")),
             "second_line" to ("A 类二线协作" to listOf("待领取 3 项", "待主负责人授权 1 项", "最多 2 名二线")),
-            "transfer" to ("客户转接" to listOf("转接候选人按团队与有效状态裁剪", "转接前展示负责人和提醒影响")),
+            "transfer" to ("客户转接" to listOf("转接可选人按团队与有效状态裁剪", "转接前展示负责人和提醒影响")),
             "tasks" to ("任务中心" to listOf("今日待完成 2 项", "待验收 1 项")),
             "performance" to ("绩效中心" to listOf("今日 11.5 / 14 分", "待审核交流 1 条")),
             "consultations" to ("咨询交接" to listOf("待顾问接受 1 项", "48 小时内待回填 1 项")),

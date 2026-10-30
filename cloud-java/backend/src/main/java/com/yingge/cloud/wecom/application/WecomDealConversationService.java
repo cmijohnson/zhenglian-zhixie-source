@@ -217,7 +217,7 @@ public class WecomDealConversationService {
             state.pendingNewOwner = owner;
             return "发现同名客户，请 /search " + name + " 后选择复用；确需新增时发送 /new-confirm 原因。"
                     + "同名客户数量：" + (sameNameCount == null ? duplicate.matches().size()+duplicate.hiddenExactMatches() : sameNameCount)
-                    + "；仅在搜索中展示当前账号可见候选。";
+                    + "；仅在搜索中展示当前账号可见可选。";
         }
         if (state.customerId != null) requireNoOpenDraft(state);
         var created = customers.createFromWecomQuickEntry(name, owner, reason);
