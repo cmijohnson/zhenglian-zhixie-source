@@ -52,7 +52,7 @@
       "self_developed_boundary": "未修改JDK；业务实现独立",
       "obligations": "按列明条款保留归属、许可及对应来源信息。",
       "opening": "只发布Docker构建引用，不在源码包中分发JDK。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/Dockerfile",
         "cloud-java/backend/pom.xml"
@@ -60,7 +60,7 @@
       "source_url": "https://github.com/adoptium/temurin21-binaries",
       "self_boundary": "未修改JDK；业务实现独立",
       "distribution": "只发布Docker构建引用，不在源码包中分发JDK。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R03",
@@ -74,7 +74,7 @@
       "self_developed_boundary": "框架未修改；业务授权策略、服务编排为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -82,7 +82,7 @@
       "source_url": "https://github.com/spring-projects/spring-boot",
       "self_boundary": "框架未修改；业务授权策略、服务编排为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R04",
@@ -96,7 +96,7 @@
       "self_developed_boundary": "迁移SQL由本项目编写；Flyway未修改",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "~/.m2/repository/org/flywaydb/flyway-parent/12.11.0/flyway-parent-12.11.0.pom"
@@ -104,7 +104,7 @@
       "source_url": "https://github.com/flyway/flyway",
       "self_boundary": "迁移SQL由本项目编写；Flyway未修改",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R05",
@@ -118,14 +118,14 @@
       "self_developed_boundary": "未修改驱动；事务和查询为自研",
       "obligations": "保留版权、许可条件与免责声明；按组件许可使用和再分发。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
       ],
       "source_url": "https://jdbc.postgresql.org/about/license.html",
       "self_boundary": "未修改驱动；事务和查询为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R06",
@@ -139,7 +139,7 @@
       "self_developed_boundary": "接口与Schema为自研；组件未修改",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -147,7 +147,7 @@
       "source_url": "https://github.com/springdoc/springdoc-openapi",
       "self_boundary": "接口与Schema为自研；组件未修改",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R07",
@@ -161,7 +161,7 @@
       "self_developed_boundary": "字段映射和业务校验为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -169,7 +169,7 @@
       "source_url": "https://commons.apache.org/proper/commons-csv/",
       "self_boundary": "字段映射和业务校验为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R08",
@@ -183,7 +183,7 @@
       "self_developed_boundary": "业务模板、字段转换与冲突处理为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -191,7 +191,7 @@
       "source_url": "https://poi.apache.org/",
       "self_boundary": "业务模板、字段转换与冲突处理为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R09",
@@ -205,7 +205,7 @@
       "self_developed_boundary": "驱动未修改；迁移映射为自研",
       "obligations": "保留驱动许可；驱动携带的本机组件按各自许可处理。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -213,7 +213,7 @@
       "source_url": "https://github.com/xerial/sqlite-jdbc",
       "self_boundary": "驱动未修改；迁移映射为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R10",
@@ -227,7 +227,7 @@
       "self_developed_boundary": "密码库未修改；密钥配置、使用边界和数据结构为自研",
       "obligations": "保留版权、许可条件与免责声明；按组件许可使用和再分发。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -235,7 +235,7 @@
       "source_url": "https://www.bouncycastle.org/about/license/",
       "self_boundary": "密码库未修改；密钥配置、使用边界和数据结构为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R11",
@@ -249,7 +249,7 @@
       "self_developed_boundary": "工具注册、Scope、审批与执行控制为自研",
       "obligations": "保留版权及许可全文；按列明许可选项使用。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -257,7 +257,7 @@
       "source_url": "https://github.com/modelcontextprotocol/java-sdk",
       "self_boundary": "工具注册、Scope、审批与执行控制为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R12",
@@ -271,7 +271,7 @@
       "self_developed_boundary": "授权证据域、业务提示、模型适配及结果校验为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -279,7 +279,7 @@
       "source_url": "https://github.com/langchain4j/langchain4j",
       "self_boundary": "授权证据域、业务提示、模型适配及结果校验为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R13",
@@ -293,7 +293,7 @@
       "self_developed_boundary": "身份绑定、客户字段映射、同步规则为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "~/.m2/repository/com/larksuite/oapi/oapi-sdk/2.7.3/oapi-sdk-2.7.3.pom"
@@ -301,7 +301,7 @@
       "source_url": "https://github.com/larksuite/oapi-sdk-java/blob/v2.7.3/LICENSE",
       "self_boundary": "身份绑定、客户字段映射、同步规则为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R14",
@@ -315,7 +315,7 @@
       "self_developed_boundary": "测试场景、夹具和断言为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/backend/pom.xml",
         "Maven本机制品POM及backend/target可执行JAR内依赖清单"
@@ -323,7 +323,7 @@
       "source_url": "https://github.com/testcontainers/testcontainers-java",
       "self_boundary": "测试场景、夹具和断言为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R15",
@@ -337,7 +337,7 @@
       "self_developed_boundary": "未修改内核；Schema、索引、查询和迁移为自研",
       "obligations": "保留版权、许可条件与免责声明；按组件许可使用和再分发。",
       "opening": "发布构建文件；数据库镜像由部署者构建或获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/docker-compose.yml",
         "cloud-java/deploy/postgres/Dockerfile.pgvector18.4"
@@ -345,7 +345,7 @@
       "source_url": "https://www.postgresql.org/about/licence/",
       "self_boundary": "未修改内核；Schema、索引、查询和迁移为自研",
       "distribution": "发布构建文件；数据库镜像由部署者构建或获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R16",
@@ -359,14 +359,14 @@
       "self_developed_boundary": "未修改扩展；检索范围、授权过滤和结果合并为自研",
       "obligations": "保留版权、许可条件与免责声明；按组件许可使用和再分发。",
       "opening": "发布固定revision构建脚本，构建时获取上游源码并保留许可。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/deploy/postgres/Dockerfile.pgvector18.4"
       ],
       "source_url": "https://github.com/pgvector/pgvector",
       "self_boundary": "未修改扩展；检索范围、授权过滤和结果合并为自研",
       "distribution": "发布固定revision构建脚本，构建时获取上游源码并保留许可。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R17",
@@ -380,7 +380,7 @@
       "self_developed_boundary": "未修改运行时",
       "obligations": "按列明条款保留归属、许可及对应来源信息。",
       "opening": "源码包仅含构建引用；依赖运行镜像另行获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/frontend/Dockerfile",
         "cloud-java/qq-bridge/Dockerfile"
@@ -388,7 +388,7 @@
       "source_url": "https://github.com/nodejs/node/blob/main/LICENSE",
       "self_boundary": "未修改运行时",
       "distribution": "源码包仅含构建引用；依赖运行镜像另行获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R18",
@@ -402,7 +402,7 @@
       "self_developed_boundary": "页面、交互、权限视图和业务状态为自研",
       "obligations": "保留版权及许可全文；按列明许可选项使用。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/frontend/package-lock.json",
         "cloud-java/forum-frontend/package-lock.json"
@@ -410,7 +410,7 @@
       "source_url": "https://github.com/vuejs/core",
       "self_boundary": "页面、交互、权限视图和业务状态为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R19",
@@ -424,7 +424,7 @@
       "self_developed_boundary": "工具未修改；类型合同和构建配置为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/frontend/package-lock.json",
         "cloud-java/forum-frontend/package-lock.json"
@@ -432,7 +432,7 @@
       "source_url": "https://github.com/vitejs/vite",
       "self_boundary": "工具未修改；类型合同和构建配置为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R20",
@@ -446,14 +446,14 @@
       "self_developed_boundary": "测试场景及断言为自研",
       "obligations": "保留版权及许可全文；按列明许可选项使用。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/frontend/package-lock.json"
       ],
       "source_url": "https://github.com/vitest-dev/vitest",
       "self_boundary": "测试场景及断言为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R21",
@@ -467,14 +467,14 @@
       "self_developed_boundary": "路由白名单、成员绑定与会话策略为自研",
       "obligations": "保留版权及许可全文；按列明许可选项使用。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/qq-bridge/package-lock.json"
       ],
       "source_url": "https://github.com/expressjs/express",
       "self_boundary": "路由白名单、成员绑定与会话策略为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R22",
@@ -488,14 +488,14 @@
       "self_developed_boundary": "实例隔离、配额和生命周期策略为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/qq-bridge/package-lock.json"
       ],
       "source_url": "https://github.com/apocas/dockerode",
       "self_boundary": "实例隔离、配额和生命周期策略为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R23",
@@ -509,7 +509,7 @@
       "self_developed_boundary": "本项目提供路径、Session/CSRF、网关和客户同步补丁",
       "obligations": "保留GPL、归属和修改声明；分发修改镜像时提供对应源码及补丁。",
       "opening": "发布集成补丁与构建脚本；上游源码在构建时按固定revision获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/deploy/scripts/build-qce-image.sh",
         "cloud-java/deploy/qce-patches/apply.mjs"
@@ -517,7 +517,7 @@
       "source_url": "https://github.com/shuakami/qq-chat-exporter",
       "self_boundary": "本项目提供路径、Session/CSRF、网关和客户同步补丁",
       "distribution": "发布集成补丁与构建脚本；上游源码在构建时按固定revision获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R24",
@@ -552,7 +552,7 @@
       "self_developed_boundary": "部署拓扑和业务配置为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布Compose配置，不分发Docker Desktop。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/docker-compose.yml",
         "cloud-java/deploy/docker-compose.qq.yml"
@@ -560,7 +560,7 @@
       "source_url": "https://github.com/docker/compose",
       "self_boundary": "部署拓扑和业务配置为自研",
       "distribution": "发布Compose配置，不分发Docker Desktop。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R26",
@@ -574,7 +574,7 @@
       "self_developed_boundary": "代理规则和业务路由为自研",
       "obligations": "保留版权、许可条件与免责声明；按组件许可使用和再分发。",
       "opening": "发布配置与镜像引用；代理运行组件另行获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/frontend/Dockerfile",
         "cloud-java/frontend/nginx.conf.template"
@@ -582,7 +582,7 @@
       "source_url": "https://nginx.org/LICENSE",
       "self_boundary": "代理规则和业务路由为自研",
       "distribution": "发布配置与镜像引用；代理运行组件另行获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R27",
@@ -596,7 +596,7 @@
       "self_developed_boundary": "未修改Ollama；启动、模型配置与业务检索为自研",
       "obligations": "按列明条款保留归属、许可及对应来源信息。",
       "opening": "发布镜像引用和启动脚本；软件镜像与权重独立取得。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/docker-compose.yml",
         "cloud-java/deploy/scripts/embedding-entrypoint.sh"
@@ -604,7 +604,7 @@
       "source_url": "https://github.com/ollama/ollama/blob/main/LICENSE",
       "self_boundary": "未修改Ollama；启动、模型配置与业务检索为自研",
       "distribution": "发布镜像引用和启动脚本；软件镜像与权重独立取得。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R28",
@@ -683,14 +683,14 @@
       "self_developed_boundary": "档案、提醒及交互流程为自研",
       "obligations": "保留版权及许可全文；按列明许可选项使用。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "package-lock.json"
       ],
       "source_url": "https://github.com/facebook/react",
       "self_boundary": "档案、提醒及交互流程为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R32",
@@ -704,14 +704,14 @@
       "self_developed_boundary": "业务规则与页面为自研",
       "obligations": "保留版权及许可全文；按列明许可选项使用。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "package-lock.json"
       ],
       "source_url": "https://github.com/iamkun/dayjs",
       "self_boundary": "业务规则与页面为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R33",
@@ -725,14 +725,14 @@
       "self_developed_boundary": "导出字段与业务映射为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "package-lock.json"
       ],
       "source_url": "https://git.sheetjs.com/sheetjs/sheetjs",
       "self_boundary": "导出字段与业务映射为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R34",
@@ -746,7 +746,7 @@
       "self_developed_boundary": "Rust命令、权限配置和业务服务为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "src-tauri/Cargo.lock",
         "package-lock.json"
@@ -754,7 +754,7 @@
       "source_url": "https://github.com/tauri-apps/tauri",
       "self_boundary": "Rust命令、权限配置和业务服务为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R35",
@@ -768,7 +768,7 @@
       "self_developed_boundary": "数据库结构、命令和业务转换为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "src-tauri/Cargo.lock",
         "本机Cargo registry对应版本Cargo.toml的package.license"
@@ -776,7 +776,7 @@
       "source_url": "https://crates.io/",
       "self_boundary": "数据库结构、命令和业务转换为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R36",
@@ -790,14 +790,14 @@
       "self_developed_boundary": "工作簿业务结构为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "src-tauri/Cargo.lock"
       ],
       "source_url": "https://github.com/jmcnamara/rust_xlsxwriter",
       "self_boundary": "工作簿业务结构为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R37",
@@ -832,14 +832,14 @@
       "self_developed_boundary": "接口映射、重试与鉴权策略为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/android-app/gradle/libs.versions.toml"
       ],
       "source_url": "https://github.com/square/retrofit",
       "self_boundary": "接口映射、重试与鉴权策略为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R39",
@@ -851,17 +851,18 @@
       "license": "Apache-2.0（Gradle/AGP）；EPL-1.0（JUnit4）",
       "usage": "移动端构建与测试",
       "self_developed_boundary": "工程配置和测试用例为自研",
-      "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
-      "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。；随附 Wrapper JAR 保留内嵌 Apache-2.0 许可证。",
+      "opening": "随附 Gradle Wrapper 引导 JAR；依赖由构建工具获取。",
+      "status": "已核对版本；Wrapper JAR 内嵌 META-INF/LICENSE，保留原许可。",
       "evidence": [
         "cloud-java/android-app/gradle/libs.versions.toml",
-        "cloud-java/android-app/gradle/wrapper/gradle-wrapper.properties"
+        "cloud-java/android-app/gradle/wrapper/gradle-wrapper.properties",
+        "cloud-java/android-app/gradle/wrapper/gradle-wrapper.jar: META-INF/LICENSE"
       ],
       "source_url": "https://github.com/gradle/gradle",
       "self_boundary": "工程配置和测试用例为自研",
-      "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "distribution": "随附 Gradle Wrapper 引导 JAR；依赖由构建工具获取。",
+      "verification": "已核对版本；Wrapper JAR 内嵌 META-INF/LICENSE，保留原许可。"
     },
     {
       "id": "R40",
@@ -875,7 +876,7 @@
       "self_developed_boundary": "SwiftUI业务页面、API客户端、存储与同步为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布客户端源码；Xcode、系统框架及签名材料由开发环境提供。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "cloud-java/ios-app/Package.swift",
         "native-mac/Package.swift"
@@ -883,7 +884,7 @@
       "source_url": "https://www.swift.org/legal/",
       "self_boundary": "SwiftUI业务页面、API客户端、存储与同步为自研",
       "distribution": "发布客户端源码；Xcode、系统框架及签名材料由开发环境提供。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R41",
@@ -897,14 +898,14 @@
       "self_developed_boundary": "归档内容和业务流程为自研",
       "obligations": "保留版权及许可全文；按列明许可选项使用。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "native-mac/Package.resolved"
       ],
       "source_url": "https://github.com/weichsel/ZIPFoundation/blob/0.9.20/LICENSE",
       "self_boundary": "归档内容和业务流程为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     },
     {
       "id": "R42",
@@ -918,14 +919,14 @@
       "self_developed_boundary": "工具未修改；工程配置为自研",
       "obligations": "保留版权、LICENSE及适用NOTICE；标明对上游的修改；不授予上游商标权。",
       "opening": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "status": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。",
+      "status": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。",
       "evidence": [
         "package-lock.json"
       ],
       "source_url": "https://github.com/vitejs/vite",
       "self_boundary": "工具未修改；工程配置为自研",
       "distribution": "发布依赖声明和集成代码；第三方依赖由构建工具获取。",
-      "verification": "版本与许可声明已核对；本次源码包不含第三方安装目录或编译制品。"
+      "verification": "版本与许可声明已核对；源码包不含依赖安装目录及应用构建输出。"
     }
   ],
   "inventory_file": "dependency-inventory.json",

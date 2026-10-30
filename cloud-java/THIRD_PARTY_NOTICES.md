@@ -2,7 +2,7 @@
 
 本项目自主源码依据根目录 `LICENSE` 所载 GPL-3.0 发布。第三方软件、模型、平台服务和可选运行组件分别适用其原始许可或服务条款；主项目许可不改变这些权利边界。公开仓库：<https://github.com/cmijohnson/zhenglian-zhixie-source>。
 
-本源码仓库提供业务实现、接口契约、数据库迁移、集成补丁、构建配置和测试。第三方库由 Maven、npm、Cargo、Gradle 或 Swift Package Manager 获取，版本以各模块锁文件和构建配置为准。安装目录、模型权重、运行镜像、平台账号、访问凭据与签名材料不随本源码包分发。
+本源码仓库提供业务实现、接口契约、数据库迁移、集成补丁、构建配置和测试。源码随附 Gradle Wrapper 引导 JAR（cloud-java/android-app/gradle/wrapper/gradle-wrapper.jar），其 Apache-2.0 许可证保留于 JAR 内 META-INF/LICENSE。第三方运行依赖由 Maven、npm、Cargo、Gradle 或 Swift Package Manager 获取，版本以各模块锁文件和构建配置为准。安装目录、模型权重、运行镜像、平台账号、访问凭据与签名材料不随本源码包分发。
 
 ## QQ Bridge、QCE 与 NapCat
 
@@ -45,7 +45,7 @@ NapCat 是独立的可选 QQ 运行组件。官方许可为 **Limited Redistribu
 | Tauri | Rust tauri2.11.3、JS API2.11.1及锁定插件 | MIT OR Apache-2.0 |
 | Rust基础库 | anyhow、chrono、serde、serde_json、log；csv；rusqlite | MIT OR Apache-2.0；csv为Unlicense或MIT；rusqlite为MIT |
 | Android | Kotlin2.0.21、AndroidX/Compose、Retrofit2.11.0、OkHttp4.12.0、Coroutines1.9.0 | Apache-2.0 |
-| 移动端构建测试 | Gradle8.9、AGP8.7.3；JUnit4.13.2 | Apache-2.0；EPL-1.0 |
+| 移动端构建测试 | Gradle8.9（随附 Wrapper 引导 JAR）、AGP8.7.3；JUnit4.13.2 | Apache-2.0；EPL-1.0；Wrapper JAR 保留内嵌 META-INF/LICENSE |
 | Swift客户端 | Swift；ZIPFoundation0.9.20 | Apache-2.0 WITH Runtime Library Exception；MIT |
 
 以上列出直接依赖和关键运行组件。传递依赖以精确锁文件、Maven解析结果及各组件自身的 LICENSE/NOTICE 为准。源码包通过构建工具获取依赖；分发已编译程序或镜像时，保留适用的版权、许可、NOTICE、修改声明与对应源码。Apple SDK、Android SDK、Docker Desktop 等开发环境产品按其独立条款取得。
